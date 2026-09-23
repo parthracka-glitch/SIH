@@ -6,8 +6,13 @@ from fastapi import HTTPException, status
 class AppException(HTTPException):
     """Base application exception."""
 
-    def __init__(self, detail: str, status_code: int = 500):
+    def __init__(self, detail: str, status_code: int = 500, error_code: str = "APP_ERROR"):
+        self.error_code = error_code
+        self.message = detail
         super().__init__(status_code=status_code, detail=detail)
+
+
+AppError = AppException
 
 
 class NotFoundError(AppException):
