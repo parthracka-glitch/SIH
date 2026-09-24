@@ -98,6 +98,44 @@ html {
   transition: all var(--transition-base);
 }
 
+@keyframes pulse-ecg {
+  0% {
+    stroke-dashoffset: 300;
+    opacity: 0.3;
+  }
+  50% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: -300;
+    opacity: 0.3;
+  }
+}
+
+.animate-ecg {
+  stroke-dasharray: 150;
+  animation: pulse-ecg 3s ease-in-out infinite;
+}
+
+@keyframes float-subtle {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+}
+
+.animate-float {
+  animation: float-subtle 4s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.8; filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.4)); }
+  50% { opacity: 1; filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.8)); }
+}
+
+.animate-glow {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
 .interactive-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);

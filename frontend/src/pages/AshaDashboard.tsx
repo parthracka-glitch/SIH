@@ -1,218 +1,1477 @@
 import React, { useState } from "react";
 import {
   Users,
-  Wifi,
-  WifiOff,
   RefreshCw,
-  Baby,
-  AlertCircle,
+  AlertTriangle,
   CheckCircle2,
-  QrCode
+  QrCode,
+  Mic,
+  Phone,
+  Search,
+  Plus,
+  Heart,
+  Siren,
+  MapPin,
+  Check,
+  X,
+  Stethoscope,
+  Baby,
+  ShieldCheck,
+  Activity,
+  Calendar,
+  Pill,
+  Syringe,
+  Package,
+  FileText,
+  AlertCircle,
+  Zap,
 } from "lucide-react";
 import { QRScanner } from "../components/QRScanner";
+import { VoiceIntakeModal } from "../components/voice/VoiceIntakeModal";
+import { SosEmergencyModal } from "../components/SosEmergencyModal";
+import {
+  EmergencyPhcBookingModal,
+  EmergencyPatientInfo,
+} from "../components/EmergencyPhcBookingModal";
+
+/* ───────────────────────────── Types ───────────────────────────── */
+
+export interface PatientData {
+  id: string;
+  name: string;
+  age: number;
+  gender: "F" | "M";
+  house: string;
+  phone: string;
+  abhaId?: string;
+  category: "HIGH_RISK" | "ANC" | "NCD" | "INFANT" | "ROUTINE";
+  condition: string;
+  status: string;
+  dueToday: boolean;
+  completedToday?: boolean;
+
+  // Tab 1: Vitals & Health Check
+  vitals: {
+    bp?: string;
+    spo2?: string;
+    sugar?: string;
+    hb?: string;
+    temp?: string;
+    weight?: string;
+  };
+
+  // Tab 2: Maternal / ANC
+  maternal?: {
+    isPregnant?: boolean;
+    trimester?: "1st Trimester" | "2nd Trimester" | "3rd Trimester" | "Postnatal (PNC)";
+    weeks?: number;
+    edd?: string;
+    highRiskFlags?: string[];
+    tdVaccineGiven?: boolean;
+    ifaTabletsIssued?: number;
+  };
+
+  // Tab 3: Child Immunization
+  immunization?: {
+    isChild?: boolean;
+    childDob?: string;
+    vaccinesGiven?: string[];
+    vaccinesDue?: string[];
+    nutritionStatus?: "Normal" | "Moderate (MAM)" | "Severe (SAM)";
+  };
+
+  // Tab 4: NCD & Chronic Care
+  ncd?: {
+    hasHypertension?: boolean;
+    hasDiabetes?: boolean;
+    medicationAdherence?: "Regular" | "Irregular" | "Stopped";
+    monthlyMedsDelivered?: boolean;
+    lifestyleCounseling?: boolean;
+  };
+
+  // Tab 5: Supplies, Services & Referral
+  services?: {
+    suppliesGiven?: string[];
+    referralStatus?: "None" | "PHC Doctor Referral" | "108 Emergency Ambulance";
+    nextVisitDate?: string;
+    remarks?: string;
+  };
+}
+
+/* ──────────────────────── Sample Initial Data ──────────────────────── */
+
+const INITIAL_PATIENTS: PatientData[] = [
+  {
+    id: "P-401",
+    name: "Kavita Ramesh Shinde",
+    age: 26,
+    gender: "F",
+    house: "H-42",
+    phone: "+91 98234 11204",
+    abhaId: "91-4829-1029-4412",
+    category: "HIGH_RISK",
+    condition: "Pregnancy Induced Hypertension",
+    status: "Follow-up BP Check Due",
+    dueToday: true,
+    vitals: { bp: "150/95", spo2: "98%", temp: "98.4", hb: "10.2", weight: "58" },
+    maternal: {
+      isPregnant: true,
+      trimester: "3rd Trimester",
+      weeks: 34,
+      edd: "2026-11-15",
+      highRiskFlags: ["Gestational Hypertension", "Edema in feet"],
+      tdVaccineGiven: true,
+      ifaTabletsIssued: 60,
+    },
+    services: {
+      suppliesGiven: ["IFA Iron Tablets", "Calcium Supplement", "Nutrition Counseling"],
+      referralStatus: "PHC Doctor Referral",
+      nextVisitDate: "2026-09-28",
+      remarks: "High BP noted. Advised strict salt restriction and PHC checkup on Monday.",
+    },
+  },
+  {
+    id: "P-402",
+    name: "Sita Devi",
+    age: 34,
+    gender: "F",
+    house: "H-04",
+    phone: "+91 94210 99812",
+    abhaId: "91-1204-9843-1184",
+    category: "HIGH_RISK",
+    condition: "Severe Anemia (Hb 6.8 g/dL)",
+    status: "PHC Referral / 108 Standby",
+    dueToday: true,
+    vitals: { bp: "118/76", spo2: "97%", temp: "98.2", hb: "6.8", weight: "49" },
+    maternal: {
+      isPregnant: true,
+      trimester: "2nd Trimester",
+      weeks: 24,
+      edd: "2027-01-10",
+      highRiskFlags: ["Severe Anemia (Hb < 7 g/dL)", "Dizziness"],
+      tdVaccineGiven: true,
+      ifaTabletsIssued: 100,
+    },
+    services: {
+      suppliesGiven: ["IFA Double Dose", "Dietary Counseling"],
+      referralStatus: "108 Emergency Ambulance",
+      nextVisitDate: "2026-09-25",
+      remarks: "Severe pallor observed. Family informed for iron sucrose infusion at Sub-district hospital.",
+    },
+  },
+  {
+    id: "P-403",
+    name: "Pooja Santosh Jadhav",
+    age: 22,
+    gender: "F",
+    house: "H-88",
+    phone: "+91 91580 44219",
+    category: "ANC",
+    condition: "ANC 3rd Trimester (Week 32)",
+    status: "Routine ANC & IFA Distribution",
+    dueToday: true,
+    vitals: { bp: "122/80", spo2: "99%", temp: "98.6", hb: "11.5", weight: "54" },
+    maternal: {
+      isPregnant: true,
+      trimester: "3rd Trimester",
+      weeks: 32,
+      edd: "2026-11-28",
+      highRiskFlags: [],
+      tdVaccineGiven: true,
+      ifaTabletsIssued: 30,
+    },
+    services: {
+      suppliesGiven: ["IFA Iron Tablets", "Calcium Supplement", "Nutrition Counseling"],
+      referralStatus: "None",
+      nextVisitDate: "2026-10-05",
+      remarks: "Fetal movements regular. Weight gain healthy.",
+    },
+  },
+  {
+    id: "P-404",
+    name: "Sunita Anil Gaikwad",
+    age: 28,
+    gender: "F",
+    house: "H-12",
+    phone: "+91 98221 55670",
+    category: "ANC",
+    condition: "ANC 2nd Trimester (Week 22)",
+    status: "Td Booster Completed",
+    dueToday: false,
+    completedToday: true,
+    vitals: { bp: "115/75", spo2: "98%", temp: "98.4", hb: "12.0", weight: "52" },
+    maternal: {
+      isPregnant: true,
+      trimester: "2nd Trimester",
+      weeks: 22,
+      edd: "2027-01-28",
+      highRiskFlags: [],
+      tdVaccineGiven: true,
+      ifaTabletsIssued: 30,
+    },
+    services: {
+      suppliesGiven: ["IFA Iron Tablets", "Calcium Supplement"],
+      referralStatus: "None",
+      nextVisitDate: "2026-10-12",
+      remarks: "Td dose 2 completed.",
+    },
+  },
+  {
+    id: "P-405",
+    name: "Babanrao Tukaram Patil",
+    age: 67,
+    gender: "M",
+    house: "H-19",
+    phone: "+91 97633 88120",
+    category: "NCD",
+    condition: "Type-2 Diabetes & Hypertension",
+    status: "Monthly Meds Delivered",
+    dueToday: false,
+    completedToday: true,
+    vitals: { bp: "142/88", sugar: "210", spo2: "97%", temp: "98.4", weight: "66" },
+    ncd: {
+      hasHypertension: true,
+      hasDiabetes: true,
+      medicationAdherence: "Regular",
+      monthlyMedsDelivered: true,
+      lifestyleCounseling: true,
+    },
+    services: {
+      suppliesGiven: ["BP Check", "Diabetes Counseling"],
+      referralStatus: "None",
+      nextVisitDate: "2026-10-20",
+      remarks: "Metformin & Amlodipine 30 days supplied from PHC quota.",
+    },
+  },
+  {
+    id: "P-406",
+    name: "Rameshwar Rao",
+    age: 59,
+    gender: "M",
+    house: "H-31",
+    phone: "+91 94220 12890",
+    category: "NCD",
+    condition: "Uncontrolled Hypertension",
+    status: "Salt restriction counseling needed",
+    dueToday: true,
+    vitals: { bp: "155/98", sugar: "135", spo2: "98%", temp: "98.6", weight: "72" },
+    ncd: {
+      hasHypertension: true,
+      hasDiabetes: false,
+      medicationAdherence: "Irregular",
+      monthlyMedsDelivered: false,
+      lifestyleCounseling: true,
+    },
+    services: {
+      suppliesGiven: ["BP Check", "Diet Counseling"],
+      referralStatus: "PHC Doctor Referral",
+      nextVisitDate: "2026-09-29",
+      remarks: "Skipping morning BP dose. Strongly re-counseled.",
+    },
+  },
+  {
+    id: "P-407",
+    name: "Aarav (Baby of Meena)",
+    age: 1,
+    gender: "M",
+    house: "H-65",
+    phone: "+91 98810 43901",
+    category: "INFANT",
+    condition: "Pentavalent-3 & Rota Vaccine Due",
+    status: "Session at Sub-Center Friday",
+    dueToday: true,
+    vitals: { spo2: "99%", temp: "98.2", weight: "8.5" },
+    immunization: {
+      isChild: true,
+      childDob: "2025-10-12",
+      vaccinesGiven: ["BCG", "OPV 0", "OPV 1,2", "Penta 1,2"],
+      vaccinesDue: ["Pentavalent-3", "Rotavirus-3", "fIPV-2"],
+      nutritionStatus: "Normal",
+    },
+    services: {
+      suppliesGiven: ["Nutrition Counseling", "Vaccine Due Slip Issued"],
+      referralStatus: "None",
+      nextVisitDate: "2026-09-26",
+      remarks: "Mother notified for Friday immunization session at Anganwadi.",
+    },
+  },
+  {
+    id: "P-408",
+    name: "Radhabai Chander",
+    age: 72,
+    gender: "F",
+    house: "H-09",
+    phone: "+91 99750 33412",
+    category: "ROUTINE",
+    condition: "Geriatric Mobility & Vitals Check",
+    status: "Monthly Checkup Done",
+    dueToday: false,
+    completedToday: true,
+    vitals: { bp: "128/82", spo2: "97%", temp: "98.4", weight: "50" },
+    services: {
+      suppliesGiven: ["BP Check", "General Health Advice"],
+      referralStatus: "None",
+      nextVisitDate: "2026-10-24",
+      remarks: "General condition stable.",
+    },
+  },
+];
+
+/* ──────────────────────── Helper UI Components ──────────────────────── */
+
+const CategoryBadge: React.FC<{ category: PatientData["category"] }> = ({ category }) => {
+  const config: Record<string, { bg: string; text: string; label: string }> = {
+    HIGH_RISK: { bg: "bg-red-50 border-red-200", text: "text-red-700", label: "High Risk" },
+    ANC: { bg: "bg-violet-50 border-violet-200", text: "text-violet-700", label: "Maternal ANC" },
+    NCD: { bg: "bg-amber-50 border-amber-200", text: "text-amber-700", label: "NCD Chronic" },
+    INFANT: { bg: "bg-sky-50 border-sky-200", text: "text-sky-700", label: "Child Health" },
+    ROUTINE: { bg: "bg-slate-50 border-slate-200", text: "text-slate-600", label: "Routine" },
+  };
+  const c = config[category] || config.ROUTINE;
+  return (
+    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${c.bg} ${c.text}`}>
+      {c.label}
+    </span>
+  );
+};
+
+const VitalChip: React.FC<{ label: string; value: string; alert?: boolean }> = ({ label, value, alert }) => (
+  <span
+    className={`inline-flex items-center gap-1 text-[11px] font-mono font-medium px-2 py-0.5 rounded ${
+      alert ? "bg-red-50 text-red-700 font-bold border border-red-200" : "bg-slate-100 text-slate-700"
+    }`}
+  >
+    <span className="text-[10px] opacity-60 uppercase">{label}</span>
+    {value}
+  </span>
+);
+
+/* ────────────────────────── Main Component ─────────────────────────── */
 
 export const AshaDashboard: React.FC = () => {
   const [isOnline, setIsOnline] = useState(true);
   const [pendingSyncCount, setPendingSyncCount] = useState(3);
-  const [activeTab, setActiveTab] = useState<"roster" | "new_visit">("roster");
-  const [showScanner, setShowScanner] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  // New Visit Form State
-  const [formData, setFormData] = useState({
+  // Filter tabs
+  const [activeFilter, setActiveFilter] = useState<"ALL" | "HIGH_RISK" | "ANC" | "INFANT" | "NCD" | "DUE">("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Modals & Active Record
+  const [showScanner, setShowScanner] = useState(false);
+  const [showVoiceIntake, setShowVoiceIntake] = useState(false);
+  const [showSosModal, setShowSosModal] = useState(false);
+  const [showRecordModal, setShowRecordModal] = useState(false);
+  const [modalActiveTab, setModalActiveTab] = useState<"VITALS" | "MATERNAL" | "CHILD" | "NCD" | "SUPPLIES">("VITALS");
+
+  // Emergency PHC Fast-Track Booking
+  const [emergencyPatient, setEmergencyPatient] = useState<EmergencyPatientInfo | null>(null);
+  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
+
+  // Current Patient being edited / created
+  const [currentPatient, setCurrentPatient] = useState<PatientData | null>(null);
+
+  // Form State for editing patient tabs
+  const [formData, setFormData] = useState<Partial<PatientData>>({
     name: "",
-    mobile: "",
-    bp: "",
-    spo2: ""
+    house: "",
+    age: 25,
+    gender: "F",
+    phone: "",
+    category: "ROUTINE",
+    vitals: { bp: "120/80", sugar: "100", spo2: "98", hb: "12.0", temp: "98.4", weight: "55" },
+    maternal: { isPregnant: false, trimester: "2nd Trimester", weeks: 20, edd: "", highRiskFlags: [], tdVaccineGiven: false, ifaTabletsIssued: 30 },
+    immunization: { isChild: false, childDob: "", vaccinesGiven: [], vaccinesDue: [], nutritionStatus: "Normal" },
+    ncd: { hasHypertension: false, hasDiabetes: false, medicationAdherence: "Regular", monthlyMedsDelivered: false, lifestyleCounseling: false },
+    services: { suppliesGiven: [], referralStatus: "None", nextVisitDate: "", remarks: "" },
   });
 
-  const handleSaveVisit = () => {
-    if (!formData.name) {
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [patients, setPatients] = useState<PatientData[]>(INITIAL_PATIENTS);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleSyncNow = () => {
+    if (pendingSyncCount === 0) {
+      showToast("All records are up to date.");
+      return;
+    }
+    setIsSyncing(true);
+    setTimeout(() => {
+      setPendingSyncCount(0);
+      setIsSyncing(false);
+      showToast("All field records synced to National Health Cloud.");
+    }, 1200);
+  };
+
+  const handleOpenEmergencyModal = (patient: any) => {
+    setEmergencyPatient({
+      id: patient.id,
+      name: patient.name,
+      age: patient.age,
+      gender: patient.gender,
+      house: patient.house,
+      phone: patient.phone,
+      condition: patient.condition,
+      highRiskReason: patient.maternal?.highRiskFlags?.join(", ") || patient.condition || "High Risk Patient",
+      vitalsSummary: `BP: ${patient.vitals?.bp || "N/A"} • SpO2: ${patient.vitals?.spo2 || "N/A"} • Sugar: ${patient.vitals?.sugar || "N/A"}`,
+    });
+    setShowEmergencyModal(true);
+  };
+
+  // Open the structured modal for a patient
+  const handleOpenModal = (patient?: PatientData, initialTab: "VITALS" | "MATERNAL" | "CHILD" | "NCD" | "SUPPLIES" = "VITALS") => {
+    if (patient) {
+      setCurrentPatient(patient);
+      setFormData(JSON.parse(JSON.stringify(patient)));
+      // Auto pick best tab if patient is ANC or Infant
+      if (patient.category === "ANC") setModalActiveTab("MATERNAL");
+      else if (patient.category === "INFANT") setModalActiveTab("CHILD");
+      else if (patient.category === "NCD") setModalActiveTab("NCD");
+      else setModalActiveTab(initialTab);
+    } else {
+      setCurrentPatient(null);
+      setFormData({
+        id: `P-${Date.now().toString().slice(-3)}`,
+        name: "",
+        house: "",
+        age: 26,
+        gender: "F",
+        phone: "+91 ",
+        category: "ROUTINE",
+        condition: "Field Health Checkup",
+        status: "Recorded by ASHA",
+        dueToday: false,
+        vitals: { bp: "120/80", sugar: "100", spo2: "98", hb: "11.5", temp: "98.4", weight: "52" },
+        maternal: { isPregnant: false, trimester: "2nd Trimester", weeks: 20, edd: "", highRiskFlags: [], tdVaccineGiven: false, ifaTabletsIssued: 30 },
+        immunization: { isChild: false, childDob: "", vaccinesGiven: [], vaccinesDue: [], nutritionStatus: "Normal" },
+        ncd: { hasHypertension: false, hasDiabetes: false, medicationAdherence: "Regular", monthlyMedsDelivered: false, lifestyleCounseling: false },
+        services: { suppliesGiven: ["Nutrition Counseling"], referralStatus: "None", nextVisitDate: "", remarks: "" },
+      });
+      setModalActiveTab("VITALS");
+    }
+    setShowRecordModal(true);
+  };
+
+  // Save the complete patient record
+  const handleSaveRecord = () => {
+    if (!formData.name?.trim()) {
       alert("Please enter patient name.");
       return;
     }
+
+    // Determine category based on tabs data if not explicitly set
+    let cat = formData.category || "ROUTINE";
+    if (formData.maternal?.isPregnant) {
+      cat = formData.maternal.highRiskFlags?.length ? "HIGH_RISK" : "ANC";
+    } else if (formData.immunization?.isChild) {
+      cat = "INFANT";
+    } else if (formData.ncd?.hasHypertension || formData.ncd?.hasDiabetes) {
+      cat = "NCD";
+    }
+
+    const updatedRecord: PatientData = {
+      ...((formData as PatientData) || {}),
+      category: cat,
+      completedToday: true,
+      dueToday: false,
+      status: "Visit & Records Updated Today",
+    };
+
+    if (currentPatient) {
+      setPatients((prev) => prev.map((p) => (p.id === currentPatient.id ? updatedRecord : p)));
+    } else {
+      setPatients((prev) => [updatedRecord, ...prev]);
+    }
+
     setPendingSyncCount((prev) => prev + 1);
-    alert(`Visit for ${formData.name} recorded into offline local queue! Total pending: ${pendingSyncCount + 1}`);
-    setFormData({ name: "", mobile: "", bp: "", spo2: "" });
-    setActiveTab("roster");
+    setShowRecordModal(false);
+    showToast(`Saved complete health records for ${updatedRecord.name}.`);
   };
 
   const handleQrScanned = (code: string) => {
     setShowScanner(false);
-    alert(`Scanned ABHA QR code:\n${code}\nPatient lookup loaded.`);
+    showToast(`ABHA QR Scanned: ${code.slice(0, 18)}… Patient linked.`);
   };
 
-  return (
-    <div className="space-y-6">
-      {/* 1. Offline Sync Status Bar */}
-      <div className={`p-4 rounded-2xl flex items-center justify-between text-sm font-semibold transition ${
-        isOnline ? "bg-emerald-50 border border-emerald-200 text-emerald-900" : "bg-amber-500 text-white"
-      }`}>
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => setIsOnline(!isOnline)}
-            className="flex items-center space-x-2 text-left cursor-pointer"
-            title="Click to toggle simulated online/offline status"
-          >
-            {isOnline ? <Wifi className="w-5 h-5 text-emerald-600" /> : <WifiOff className="w-5 h-5 animate-pulse text-white" />}
-            <span>
-              {isOnline
-                ? `Connected to National Health Cloud. ${pendingSyncCount} visits waiting to sync.`
-                : `Operating Offline. All changes saved locally to IndexedDB (${pendingSyncCount} queued).`}
-            </span>
-          </button>
-        </div>
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => setShowScanner(true)}
-            className="bg-white/80 text-slate-800 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold shadow-xs hover:bg-white transition flex items-center space-x-1.5 cursor-pointer"
-          >
-            <QrCode className="w-3.5 h-3.5 text-teal-600" />
-            <span className="hidden sm:inline">Scan ABHA</span>
-          </button>
-          <button
-            onClick={() => { setPendingSyncCount(0); alert("All offline visits synchronized to Central Cloud!"); }}
-            className="bg-white text-slate-900 px-3 py-1.5 rounded-lg text-xs font-bold shadow-xs hover:bg-slate-50 transition flex items-center space-x-1.5 cursor-pointer"
-          >
-            <RefreshCw className="w-3.5 h-3.5 text-blue-600" />
-            <span>Sync Now</span>
-          </button>
-        </div>
-      </div>
+  const handleApplyVoiceIntake = (intakeData: any) => {
+    setShowVoiceIntake(false);
+    showToast(`Voice intake recorded.`);
+    handleOpenModal();
+    if (intakeData.vitalsHint?.bp) {
+      setFormData((prev) => ({
+        ...prev,
+        vitals: { ...prev.vitals, bp: intakeData.vitalsHint.bp },
+        services: { ...prev.services, remarks: intakeData.chiefComplaints || "" },
+      }));
+    }
+  };
 
-      {/* 2. Key Field Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Households Covered", count: "142 / 160", icon: Users, color: "text-blue-600" },
-          { label: "High Risk Flags", count: "7 Critical", icon: AlertCircle, color: "text-red-500" },
-          { label: "ANC Pregnancies", count: "12 Mothers", icon: Baby, color: "text-teal-600" },
-          { label: "Visits Synced Today", count: "18 Patients", icon: CheckCircle2, color: "text-emerald-600" }
-        ].map((stat, i) => {
-          const Icon = stat.icon;
-          return (
-            <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
-              <Icon className={`w-5 h-5 ${stat.color} mb-2`} />
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{stat.label}</p>
-              <p className="text-xl font-black text-slate-900">{stat.count}</p>
+  /* ── Filtered list ── */
+  const filteredPatients = patients.filter((p) => {
+    const q = searchQuery.toLowerCase();
+    const matchesSearch =
+      !q || p.name.toLowerCase().includes(q) || p.house.toLowerCase().includes(q) || p.phone.includes(searchQuery);
+    if (!matchesSearch) return false;
+    if (activeFilter === "HIGH_RISK") return p.category === "HIGH_RISK";
+    if (activeFilter === "ANC") return p.category === "ANC" || p.maternal?.isPregnant;
+    if (activeFilter === "INFANT") return p.category === "INFANT" || p.immunization?.isChild;
+    if (activeFilter === "NCD") return p.category === "NCD" || p.ncd?.hasHypertension || p.ncd?.hasDiabetes;
+    if (activeFilter === "DUE") return p.dueToday;
+    return true;
+  });
+
+  const highRiskCount = patients.filter((p) => p.category === "HIGH_RISK").length;
+  const ancCount = patients.filter((p) => p.category === "ANC" || p.maternal?.isPregnant).length;
+  const infantCount = patients.filter((p) => p.category === "INFANT" || p.immunization?.isChild).length;
+  const ncdCount = patients.filter((p) => p.category === "NCD" || p.ncd?.hasHypertension || p.ncd?.hasDiabetes).length;
+  const dueCount = patients.filter((p) => p.dueToday).length;
+
+  const isHighBp = (bp?: string) => {
+    if (!bp) return false;
+    const sys = parseInt(bp.split("/")[0]);
+    return sys >= 140;
+  };
+
+  /* ── Quick Tab Selector in Modal ── */
+  const modalTabs = [
+    { id: "VITALS", label: "General & Vitals", icon: Stethoscope },
+    { id: "MATERNAL", label: "Maternal & ANC", icon: Baby },
+    { id: "CHILD", label: "Child Vaccine", icon: Syringe },
+    { id: "NCD", label: "NCD & Chronic", icon: Heart },
+    { id: "SUPPLIES", label: "Supplies & Referral", icon: Package },
+  ] as const;
+
+  return (
+    <div className="max-w-5xl mx-auto space-y-5 pb-16">
+      {/* ─── Toast ─── */}
+      {toastMessage && (
+        <div className="fixed top-5 right-5 z-50 bg-slate-900 text-white pl-4 pr-3 py-3 rounded-xl shadow-lg flex items-center gap-2.5 text-xs font-semibold max-w-sm">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <span className="flex-1">{toastMessage}</span>
+          <button onClick={() => setToastMessage(null)} className="text-slate-400 hover:text-white p-0.5">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* ━━━━━━━ 1. MINIMAL HEADER BAR ━━━━━━━ */}
+      <section className="bg-white rounded-xl border border-slate-200 p-3.5 sm:p-4 shadow-xs">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-bold text-sm flex items-center justify-center flex-shrink-0 shadow-xs">
+              RB
             </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="font-bold text-slate-900 text-sm sm:text-base">Rekha Bai (ASHA)</h1>
+                <span className="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                  Ward 4 Sinnar
+                </span>
+              </div>
+              <div className="flex items-center gap-2 mt-0.5">
+                <button
+                  onClick={() => setIsOnline(!isOnline)}
+                  className="flex items-center gap-1.5 text-xs font-medium cursor-pointer"
+                >
+                  <span className={`w-2 h-2 rounded-full ${isOnline ? "bg-emerald-500" : "bg-amber-500"}`} />
+                  <span className={isOnline ? "text-emerald-700" : "text-amber-700"}>
+                    {isOnline ? "Online Sync Active" : "Offline Local Mode"}
+                  </span>
+                </button>
+                <span className="text-slate-300">·</span>
+                <span className="text-xs text-slate-500">{pendingSyncCount} changes to sync</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Toolbar */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowScanner(true)}
+              className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 px-3 py-2 rounded-lg border border-slate-200 transition cursor-pointer"
+            >
+              <QrCode className="w-4 h-4 text-blue-600" />
+              <span>Scan ABHA</span>
+            </button>
+            <button
+              onClick={() => setShowVoiceIntake(true)}
+              className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-violet-700 bg-violet-50 hover:bg-violet-100 px-3 py-2 rounded-lg border border-violet-200 transition cursor-pointer"
+            >
+              <Mic className="w-4 h-4 text-violet-600" />
+              <span>Voice</span>
+            </button>
+            <button
+              onClick={handleSyncNow}
+              disabled={isSyncing}
+              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition cursor-pointer ${
+                pendingSyncCount > 0
+                  ? "bg-blue-600 text-white hover:bg-blue-700 shadow-xs"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
+              <span>{isSyncing ? "Syncing…" : pendingSyncCount > 0 ? `Sync (${pendingSyncCount})` : "Synced"}</span>
+            </button>
+            <button
+              onClick={() => setShowSosModal(true)}
+              className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
+            >
+              <Siren className="w-4 h-4" />
+              <span>108 SOS</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ━━━━━━━ 2. CLEAN STATS OVERVIEW ━━━━━━━ */}
+      <section className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+        {[
+          { label: "Assigned Households", count: patients.length, filter: "ALL" as const, color: "text-slate-900", icon: Users },
+          { label: "High Risk Cases", count: highRiskCount, filter: "HIGH_RISK" as const, color: "text-red-600", icon: AlertTriangle },
+          { label: "Maternal & ANC", count: ancCount, filter: "ANC" as const, color: "text-violet-600", icon: Baby },
+          { label: "Visits Due Today", count: dueCount, filter: "DUE" as const, color: "text-blue-600", icon: Calendar },
+        ].map((item) => {
+          const Icon = item.icon;
+          const isActive = activeFilter === item.filter;
+          return (
+            <button
+              key={item.label}
+              onClick={() => setActiveFilter(item.filter)}
+              className={`p-3 rounded-xl border text-left transition cursor-pointer flex items-center justify-between ${
+                isActive
+                  ? "border-blue-500 bg-blue-50/40 ring-1 ring-blue-500/20"
+                  : "border-slate-200 bg-white hover:border-slate-300"
+              }`}
+            >
+              <div>
+                <p className="text-xs font-medium text-slate-500">{item.label}</p>
+                <p className={`text-xl font-bold mt-0.5 ${item.color}`}>{item.count}</p>
+              </div>
+              <Icon className={`w-5 h-5 opacity-40 ${item.color}`} />
+            </button>
           );
         })}
-      </div>
+      </section>
 
-      {/* 3. Action Tabs */}
-      <div className="flex space-x-2 border-b border-slate-200">
-        <button
-          onClick={() => setActiveTab("roster")}
-          className={`pb-3 px-4 text-sm font-bold border-b-2 transition cursor-pointer ${
-            activeTab === "roster" ? "border-blue-600 text-blue-700" : "border-transparent text-slate-400 hover:text-slate-700"
-          }`}
-        >
-          Village Household Roster
-        </button>
-        <button
-          onClick={() => setActiveTab("new_visit")}
-          className={`pb-3 px-4 text-sm font-bold border-b-2 transition cursor-pointer ${
-            activeTab === "new_visit" ? "border-blue-600 text-blue-700" : "border-transparent text-slate-400 hover:text-slate-700"
-          }`}
-        >
-          + Record New Patient Visit
-        </button>
-      </div>
-
-      {/* 4. Household Roster View */}
-      {activeTab === "roster" && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="font-bold text-slate-900 text-sm">Assigned Patients in Ward 4 (Sinnar / Bagru)</h3>
-            <span className="text-xs font-bold text-slate-400">Total: 48 Records</span>
-          </div>
-          <div className="divide-y divide-slate-100">
-            {[
-              { name: "Kavita Ramesh Shinde", age: 26, house: "H-42", risk: "HIGH RISK (BP 150/95)", status: "Follow-up due" },
-              { name: "Babanrao Tukaram Patil", age: 67, house: "H-19", risk: "DIABETES (Sugar 210)", status: "Medication delivered" },
-              { name: "Pooja Santosh Jadhav", age: 22, house: "H-88", risk: "ANC Trimester 3", status: "Ultrasound scheduled" },
-              { name: "Sita Devi", age: 34, house: "H-04", risk: "HIGH RISK (Hb 6.8 g/dL)", status: "108 Dispatched to DH" }
-            ].map((item, idx) => (
-              <div key={idx} className="p-4 flex items-center justify-between hover:bg-slate-50 transition">
-                <div>
-                  <h4 className="font-bold text-sm text-slate-900">{item.name}</h4>
-                  <p className="text-xs text-slate-500">Age: {item.age} yrs • House: {item.house}</p>
-                </div>
-                <div className="text-right">
-                  <span className={`inline-block px-2.5 py-1 rounded-lg text-xs font-bold ${
-                    item.risk.includes("HIGH RISK") ? "bg-red-50 text-red-700" : "bg-blue-50 text-blue-700"
-                  }`}>
-                    {item.risk}
-                  </span>
-                  <p className="text-[11px] text-slate-400 font-semibold mt-1">{item.status}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 5. Fast Field Visit Entry Form */}
-      {activeTab === "new_visit" && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4 max-w-2xl">
-          <h3 className="font-extrabold text-base text-slate-900">Quick Field Vitals Recording</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-bold text-slate-500">Patient Name</label>
-              <input
-                type="text"
-                placeholder="Full Name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full mt-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-slate-500">Mobile Number</label>
-              <input
-                type="text"
-                placeholder="10-digit number"
-                value={formData.mobile}
-                onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                className="w-full mt-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-slate-500">Blood Pressure (Systolic/Diastolic)</label>
-              <input
-                type="text"
-                placeholder="e.g. 120/80"
-                value={formData.bp}
-                onChange={(e) => setFormData({ ...formData, bp: e.target.value })}
-                className="w-full mt-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-slate-500">SpO2 (Pulse Oximeter %)</label>
-              <input
-                type="text"
-                placeholder="e.g. 98"
-                value={formData.spo2}
-                onChange={(e) => setFormData({ ...formData, spo2: e.target.value })}
-                className="w-full mt-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-500"
-              />
-            </div>
+      {/* ━━━━━━━ 3. SEARCH & CATEGORY TABS ━━━━━━━ */}
+      <section className="bg-white rounded-xl border border-slate-200 p-3.5 space-y-3 shadow-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search by patient name, house (e.g. H-42), or phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:bg-white focus:border-blue-400 transition"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
           <button
-            onClick={handleSaveVisit}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow cursor-pointer"
+            onClick={() => handleOpenModal()}
+            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition shadow-xs cursor-pointer flex-shrink-0"
           >
-            Save Record Locally (Offline PWA)
+            <Plus className="w-4 h-4" />
+            <span>+ Add Patient</span>
           </button>
+        </div>
+
+        {/* Tab Filters for ASHA Patient Segments */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+          {[
+            { id: "ALL", label: `All Patients (${patients.length})` },
+            { id: "HIGH_RISK", label: `🚨 High Risk (${highRiskCount})` },
+            { id: "ANC", label: `🤰 Maternal ANC (${ancCount})` },
+            { id: "INFANT", label: `👶 Child Vaccine (${infantCount})` },
+            { id: "NCD", label: `💊 NCD & BP/Sugar (${ncdCount})` },
+            { id: "DUE", label: `🕒 Due Today (${dueCount})` },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveFilter(tab.id as any)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
+                activeFilter === tab.id
+                  ? "bg-slate-900 text-white"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* ━━━━━━━ 4. PATIENT LIST WITH EXPANDABLE DATA ━━━━━━━ */}
+      <section className="space-y-2.5">
+        {filteredPatients.length === 0 ? (
+          <div className="bg-white rounded-xl border border-dashed border-slate-300 p-10 text-center">
+            <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+            <p className="text-sm font-semibold text-slate-700">No patient records found</p>
+            <p className="text-xs text-slate-400 mt-0.5">Try searching with another keyword or reset the filter.</p>
+          </div>
+        ) : (
+          filteredPatients.map((patient) => {
+            const isHigh = patient.category === "HIGH_RISK";
+            const isAnc = patient.category === "ANC" || patient.maternal?.isPregnant;
+            const isChild = patient.category === "INFANT" || patient.immunization?.isChild;
+
+            return (
+              <div
+                key={patient.id}
+                className={`bg-white rounded-xl border p-3.5 sm:p-4 transition hover:shadow-xs ${
+                  isHigh ? "border-red-200" : isAnc ? "border-violet-200" : "border-slate-200"
+                }`}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  {/* Left: Patient Details */}
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-bold text-sm text-slate-900">{patient.name}</h3>
+                      <span className="text-[11px] font-semibold text-slate-500">
+                        {patient.age}y · {patient.gender === "F" ? "Female" : "Male"}
+                      </span>
+                      <span className="text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded flex items-center gap-1">
+                        <MapPin className="w-2.5 h-2.5 text-slate-400" />
+                        {patient.house}
+                      </span>
+                      <CategoryBadge category={patient.category} />
+                      {patient.completedToday && (
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-0.5">
+                          <Check className="w-3 h-3" /> Checked Today
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Condition Summary */}
+                    <div className="text-xs text-slate-600 flex items-center gap-1.5 flex-wrap">
+                      <span className="font-medium text-slate-800">{patient.condition}</span>
+                      <span className="text-slate-300">·</span>
+                      <span className="text-slate-500">{patient.status}</span>
+                    </div>
+
+                    {/* Vital Chips */}
+                    <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                      {patient.vitals?.bp && (
+                        <VitalChip label="BP" value={patient.vitals.bp} alert={isHighBp(patient.vitals.bp)} />
+                      )}
+                      {patient.vitals?.sugar && <VitalChip label="Sugar" value={`${patient.vitals.sugar} mg/dL`} />}
+                      {patient.vitals?.hb && <VitalChip label="Hb" value={`${patient.vitals.hb} g/dL`} alert={parseFloat(patient.vitals.hb) < 10} />}
+                      {patient.vitals?.spo2 && <VitalChip label="SpO2" value={`${patient.vitals.spo2}%`} />}
+
+                      {/* Maternal tag summary */}
+                      {isAnc && patient.maternal?.weeks && (
+                        <span className="text-[11px] font-semibold bg-violet-50 text-violet-800 px-2 py-0.5 rounded border border-violet-200">
+                          Week {patient.maternal.weeks} ({patient.maternal.trimester})
+                        </span>
+                      )}
+
+                      {/* Vaccine tag summary */}
+                      {isChild && patient.immunization?.vaccinesDue?.[0] && (
+                        <span className="text-[11px] font-semibold bg-sky-50 text-sky-800 px-2 py-0.5 rounded border border-sky-200">
+                          Due: {patient.immunization.vaccinesDue[0]}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right Actions: Phone + SOS + Open Record Tabs */}
+                  <div className="flex items-center gap-1.5 flex-shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                    <a
+                      href={`tel:${patient.phone}`}
+                      className="p-2 rounded-lg text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 transition"
+                      title="Call Patient"
+                    >
+                      <Phone className="w-4 h-4 text-emerald-600" />
+                    </a>
+
+                    {isHigh && (
+                      <>
+                        <button
+                          onClick={() => handleOpenEmergencyModal(patient)}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-700 text-white shadow-xs transition cursor-pointer"
+                          title="Instant Emergency PHC Appointment"
+                        >
+                          <Zap className="w-3.5 h-3.5 fill-white" />
+                          <span className="hidden sm:inline">Book Emergency PHC</span>
+                          <span className="sm:hidden">PHC</span>
+                        </button>
+                        <button
+                          onClick={() => setShowSosModal(true)}
+                          className="p-2 rounded-lg text-red-600 hover:bg-red-50 transition cursor-pointer"
+                          title="108 Emergency Referral"
+                        >
+                          <Siren className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+
+                    {/* Button to open full structured record modal */}
+                    <button
+                      onClick={() => handleOpenModal(patient)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition cursor-pointer"
+                    >
+                      <Stethoscope className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Record & View Tabs</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </section>
+
+      {/* ━━━━━━━ 5. STRUCTURED PATIENT DATA MODAL WITH ALL ASHA TABS ━━━━━━━ */}
+      {showRecordModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-2xl w-full p-4 sm:p-6 shadow-2xl space-y-4 my-6 animate-in fade-in zoom-in-95 duration-150">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h2 className="font-bold text-slate-900 text-base">
+                  {currentPatient ? `Patient Record: ${formData.name}` : "New Patient Health Record"}
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Complete offline-ready health entry for ASHA field worker
+                </p>
+              </div>
+              <button
+                onClick={() => setShowRecordModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Basic Identification Row */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <div className="col-span-2 sm:col-span-2">
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">Patient Full Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Kavita Shinde"
+                  value={formData.name || ""}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">House Number</label>
+                <input
+                  type="text"
+                  placeholder="e.g. H-42"
+                  value={formData.house || ""}
+                  onChange={(e) => setFormData({ ...formData, house: e.target.value })}
+                  className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">Age & Gender</label>
+                <div className="flex gap-1.5">
+                  <input
+                    type="number"
+                    value={formData.age || 25}
+                    onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value) || 0 })}
+                    className="w-14 p-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none focus:border-blue-500"
+                  />
+                  <select
+                    value={formData.gender || "F"}
+                    onChange={(e) => setFormData({ ...formData, gender: e.target.value as "F" | "M" })}
+                    className="p-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none"
+                  >
+                    <option value="F">Female</option>
+                    <option value="M">Male</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* TAB SELECTOR HEADER FOR COMPLETE PATIENT DATA */}
+            <div className="flex items-center gap-1 border-b border-slate-200 overflow-x-auto pb-1 text-xs">
+              {modalTabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = modalActiveTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setModalActiveTab(tab.id)}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-t-lg font-bold transition cursor-pointer border-b-2 whitespace-nowrap ${
+                      isActive
+                        ? "border-blue-600 text-blue-700 bg-blue-50/50"
+                        : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* ──────── TAB 1: VITALS & HEALTH CHECK ──────── */}
+            {modalActiveTab === "VITALS" && (
+              <div className="space-y-3.5 pt-1">
+                {/* Blood Pressure Presets + Custom Input */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <Heart className="w-3.5 h-3.5 text-red-500" />
+                      <span>Blood Pressure: {formData.vitals?.bp || "120/80"} mmHg</span>
+                    </label>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { label: "Normal (120/80)", val: "120/80" },
+                      { label: "Borderline (135/88)", val: "135/88" },
+                      { label: "High (150/95)", val: "150/95" },
+                    ].map((bp) => (
+                      <button
+                        key={bp.val}
+                        type="button"
+                        onClick={() =>
+                          setFormData({ ...formData, vitals: { ...formData.vitals, bp: bp.val } })
+                        }
+                        className={`p-2 rounded-lg text-xs font-bold border transition cursor-pointer ${
+                          formData.vitals?.bp === bp.val
+                            ? "bg-blue-600 text-white border-blue-600 shadow-2xs"
+                            : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                        }`}
+                      >
+                        {bp.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Vitals Grid: Sugar, SpO2, Hb, Weight */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Blood Sugar (mg/dL)</label>
+                    <input
+                      type="number"
+                      value={formData.vitals?.sugar || "100"}
+                      onChange={(e) =>
+                        setFormData({ ...formData, vitals: { ...formData.vitals, sugar: e.target.value } })
+                      }
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">SpO2 Oxygen (%)</label>
+                    <input
+                      type="number"
+                      value={formData.vitals?.spo2 || "98"}
+                      onChange={(e) =>
+                        setFormData({ ...formData, vitals: { ...formData.vitals, spo2: e.target.value } })
+                      }
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Hemoglobin Hb (g/dL)</label>
+                    <input
+                      type="text"
+                      value={formData.vitals?.hb || "11.5"}
+                      onChange={(e) =>
+                        setFormData({ ...formData, vitals: { ...formData.vitals, hb: e.target.value } })
+                      }
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Weight (kg)</label>
+                    <input
+                      type="number"
+                      value={formData.vitals?.weight || "52"}
+                      onChange={(e) =>
+                        setFormData({ ...formData, vitals: { ...formData.vitals, weight: e.target.value } })
+                      }
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Primary Symptoms / Condition</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Mild headache, routine pregnancy follow-up"
+                    value={formData.condition || ""}
+                    onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* ──────── TAB 2: MATERNAL & ANC (MOTHERS) ──────── */}
+            {modalActiveTab === "MATERNAL" && (
+              <div className="space-y-3.5 pt-1">
+                <div className="flex items-center justify-between bg-violet-50 p-2.5 rounded-lg border border-violet-200">
+                  <span className="text-xs font-bold text-violet-900">Mark as Pregnant Mother (ANC Case)</span>
+                  <input
+                    type="checkbox"
+                    checked={formData.maternal?.isPregnant || false}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        maternal: { ...formData.maternal, isPregnant: e.target.checked },
+                      })
+                    }
+                    className="w-4 h-4 text-violet-600 rounded cursor-pointer"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Current Trimester</label>
+                    <select
+                      value={formData.maternal?.trimester || "2nd Trimester"}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          maternal: { ...formData.maternal, trimester: e.target.value as any },
+                        })
+                      }
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none"
+                    >
+                      <option value="1st Trimester">1st Trimester (1-12 Weeks)</option>
+                      <option value="2nd Trimester">2nd Trimester (13-27 Weeks)</option>
+                      <option value="3rd Trimester">3rd Trimester (28-40 Weeks)</option>
+                      <option value="Postnatal (PNC)">Postnatal (PNC)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Gestational Age (Weeks)</label>
+                    <input
+                      type="number"
+                      value={formData.maternal?.weeks || 20}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          maternal: { ...formData.maternal, weeks: parseInt(e.target.value) || 0 },
+                        })
+                      }
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Expected Delivery Date (EDD)</label>
+                  <input
+                    type="date"
+                    value={formData.maternal?.edd || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        maternal: { ...formData.maternal, edd: e.target.value },
+                      })
+                    }
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                {/* High Risk Flags Checklist for ASHA */}
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1.5">
+                    High Risk Pregnancy Markers (Any present?):
+                  </label>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {[
+                      "Severe Anemia (Hb < 7)",
+                      "High Blood Pressure (> 140/90)",
+                      "Swelling in feet / Pre-eclampsia",
+                      "Twin / Multiple Pregnancy",
+                      "Previous C-Section / Complication",
+                      "Gestational Diabetes",
+                    ].map((flag) => {
+                      const isChecked = formData.maternal?.highRiskFlags?.includes(flag) || false;
+                      return (
+                        <label
+                          key={flag}
+                          className={`flex items-center gap-2 p-2 rounded-lg border text-xs font-medium cursor-pointer ${
+                            isChecked
+                              ? "bg-red-50 border-red-300 text-red-800 font-bold"
+                              : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              const curr = formData.maternal?.highRiskFlags || [];
+                              const updated = e.target.checked
+                                ? [...curr, flag]
+                                : curr.filter((f) => f !== flag);
+                              setFormData({
+                                ...formData,
+                                maternal: { ...formData.maternal, highRiskFlags: updated },
+                              });
+                            }}
+                            className="rounded text-red-600"
+                          />
+                          <span>{flag}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ──────── TAB 3: CHILD IMMUNIZATION ──────── */}
+            {modalActiveTab === "CHILD" && (
+              <div className="space-y-3.5 pt-1">
+                <div className="flex items-center justify-between bg-sky-50 p-2.5 rounded-lg border border-sky-200">
+                  <span className="text-xs font-bold text-sky-900">Mark as Infant / Child Record</span>
+                  <input
+                    type="checkbox"
+                    checked={formData.immunization?.isChild || false}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        immunization: { ...formData.immunization, isChild: e.target.checked },
+                      })
+                    }
+                    className="w-4 h-4 text-sky-600 rounded cursor-pointer"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Child Date of Birth</label>
+                    <input
+                      type="date"
+                      value={formData.immunization?.childDob || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          immunization: { ...formData.immunization, childDob: e.target.value },
+                        })
+                      }
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Nutrition Status</label>
+                    <select
+                      value={formData.immunization?.nutritionStatus || "Normal"}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          immunization: { ...formData.immunization, nutritionStatus: e.target.value as any },
+                        })
+                      }
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none"
+                    >
+                      <option value="Normal">Normal Weight / Healthy</option>
+                      <option value="Moderate (MAM)">Moderate Underweight (MAM)</option>
+                      <option value="Severe (SAM)">Severely Malnourished (SAM)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Vaccines Checklist */}
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1.5">
+                    Vaccines Administered / Due Today:
+                  </label>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {[
+                      "BCG (At Birth)",
+                      "OPV 0, 1, 2, 3",
+                      "Pentavalent-1 (6 Weeks)",
+                      "Pentavalent-2 (10 Weeks)",
+                      "Pentavalent-3 (14 Weeks)",
+                      "Rotavirus Vaccine",
+                      "Measles-Rubella (MR-1)",
+                      "Vitamin A First Dose",
+                    ].map((vax) => {
+                      const isGiven = formData.immunization?.vaccinesGiven?.includes(vax) || false;
+                      return (
+                        <label
+                          key={vax}
+                          className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer ${
+                            isGiven
+                              ? "bg-teal-50 border-teal-300 text-teal-800 font-bold"
+                              : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isGiven}
+                            onChange={(e) => {
+                              const curr = formData.immunization?.vaccinesGiven || [];
+                              const updated = e.target.checked
+                                ? [...curr, vax]
+                                : curr.filter((v) => v !== vax);
+                              setFormData({
+                                ...formData,
+                                immunization: { ...formData.immunization, vaccinesGiven: updated },
+                              });
+                            }}
+                            className="rounded text-teal-600"
+                          />
+                          <span>{vax}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ──────── TAB 4: NCD & CHRONIC CARE ──────── */}
+            {modalActiveTab === "NCD" && (
+              <div className="space-y-3.5 pt-1">
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="flex items-center gap-2 p-2.5 rounded-lg border border-slate-200 bg-slate-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.ncd?.hasHypertension || false}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          ncd: { ...formData.ncd, hasHypertension: e.target.checked },
+                        })
+                      }
+                      className="rounded text-blue-600"
+                    />
+                    <span className="text-xs font-bold text-slate-800">Hypertension (High BP)</span>
+                  </label>
+                  <label className="flex items-center gap-2 p-2.5 rounded-lg border border-slate-200 bg-slate-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.ncd?.hasDiabetes || false}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          ncd: { ...formData.ncd, hasDiabetes: e.target.checked },
+                        })
+                      }
+                      className="rounded text-blue-600"
+                    />
+                    <span className="text-xs font-bold text-slate-800">Type-2 Diabetes</span>
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Medication Adherence</label>
+                    <select
+                      value={formData.ncd?.medicationAdherence || "Regular"}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          ncd: { ...formData.ncd, medicationAdherence: e.target.value as any },
+                        })
+                      }
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none"
+                    >
+                      <option value="Regular">Taking Daily (Regular)</option>
+                      <option value="Irregular">Irregular / Forgets Often</option>
+                      <option value="Stopped">Stopped Taking Meds</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Monthly Meds Given?</label>
+                    <select
+                      value={formData.ncd?.monthlyMedsDelivered ? "Yes" : "No"}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          ncd: { ...formData.ncd, monthlyMedsDelivered: e.target.value === "Yes" },
+                        })
+                      }
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none"
+                    >
+                      <option value="Yes">Yes — 30 Day Supply Given</option>
+                      <option value="No">No — Refill Needed from PHC</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 text-xs text-amber-900 flex items-center justify-between">
+                  <span>Lifestyle Counseling Conducted (Low salt, daily walk, diet)</span>
+                  <input
+                    type="checkbox"
+                    checked={formData.ncd?.lifestyleCounseling || false}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        ncd: { ...formData.ncd, lifestyleCounseling: e.target.checked },
+                      })
+                    }
+                    className="w-4 h-4 text-amber-600 rounded cursor-pointer"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* ──────── TAB 5: SUPPLIES, SERVICES & REFERRAL ──────── */}
+            {modalActiveTab === "SUPPLIES" && (
+              <div className="space-y-3.5 pt-1">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1.5">
+                    Free Supplies Delivered to Household:
+                  </label>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {[
+                      "IFA Iron Tablets",
+                      "Calcium Tablets",
+                      "ORS Packets",
+                      "Zinc Tablets",
+                      "Nutrition Counseling",
+                      "Contraceptive (Chhaya/Condoms)",
+                      "BP / Sugar Check",
+                      "Sanitary Napkins",
+                    ].map((supply) => {
+                      const isSupplied = formData.services?.suppliesGiven?.includes(supply) || false;
+                      return (
+                        <label
+                          key={supply}
+                          className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer ${
+                            isSupplied
+                              ? "bg-teal-50 border-teal-300 text-teal-800 font-bold"
+                              : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSupplied}
+                            onChange={(e) => {
+                              const curr = formData.services?.suppliesGiven || [];
+                              const updated = e.target.checked
+                                ? [...curr, supply]
+                                : curr.filter((s) => s !== supply);
+                              setFormData({
+                                ...formData,
+                                services: { ...formData.services, suppliesGiven: updated },
+                              });
+                            }}
+                            className="rounded text-teal-600"
+                          />
+                          <span>{supply}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Referral Action</label>
+                    <select
+                      value={formData.services?.referralStatus || "None"}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          services: { ...formData.services, referralStatus: e.target.value as any },
+                        })
+                      }
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none"
+                    >
+                      <option value="None">None (Routine Care)</option>
+                      <option value="PHC Doctor Referral">PHC Doctor / Teleconsult</option>
+                      <option value="108 Emergency Ambulance">108 Emergency Ambulance</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Next Follow-Up Date</label>
+                    <input
+                      type="date"
+                      value={formData.services?.nextVisitDate || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          services: { ...formData.services, nextVisitDate: e.target.value },
+                        })
+                      }
+                      className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 block mb-1">ASHA Field Remarks / Notes</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Advised rest, family briefed about PHC checkup"
+                    value={formData.services?.remarks || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        services: { ...formData.services, remarks: e.target.value },
+                      })
+                    }
+                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Modal Bottom Save Action */}
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-[11px] text-slate-400 font-medium">
+                Offline encrypted save to IndexedDB
+              </span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowRecordModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveRecord}
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Save Patient Record</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
         </div>
       )}
 
-      {/* QR Scanner Modal */}
-      {showScanner && (
-        <QRScanner
-          onScan={handleQrScanned}
-          onClose={() => setShowScanner(false)}
+      {/* External Modals */}
+      {showScanner && <QRScanner onScan={handleQrScanned} onClose={() => setShowScanner(false)} />}
+      {showVoiceIntake && (
+        <VoiceIntakeModal
+          isOpen={showVoiceIntake}
+          onClose={() => setShowVoiceIntake(false)}
+          onApplyIntake={handleApplyVoiceIntake}
         />
       )}
+      {showSosModal && <SosEmergencyModal isOpen={showSosModal} onClose={() => setShowSosModal(false)} />}
+
+      {/* Emergency PHC Instant Booking Modal */}
+      <EmergencyPhcBookingModal
+        isOpen={showEmergencyModal}
+        onClose={() => setShowEmergencyModal(false)}
+        patient={emergencyPatient}
+        onSuccess={(pass) => {
+          showToast(`✓ Fast-Track Token #${pass.tokenNumber} confirmed at ${pass.facility}`);
+        }}
+      />
     </div>
   );
 };

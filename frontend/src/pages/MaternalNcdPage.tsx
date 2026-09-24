@@ -17,7 +17,18 @@ import {
   User,
   Clock,
   ShieldAlert,
+  Zap,
+  Siren,
+  Phone,
+  Building2,
+  CheckCircle2,
+  Share2,
 } from 'lucide-react';
+import {
+  EmergencyPhcBookingModal,
+  EmergencyPatientInfo,
+} from '../components/EmergencyPhcBookingModal';
+import { SosEmergencyModal } from '../components/SosEmergencyModal';
 
 export const MaternalNcdPage: React.FC = () => {
   const { t } = useTranslation();
@@ -28,6 +39,12 @@ export const MaternalNcdPage: React.FC = () => {
   const [tasks, setTasks] = useState<any[]>([]);
   const [patients, setPatients] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Emergency Booking State
+  const [emergencyPatient, setEmergencyPatient] = useState<EmergencyPatientInfo | null>(null);
+  const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
+  const [isSosModalOpen, setIsSosModalOpen] = useState(false);
+  const [confirmedBookings, setConfirmedBookings] = useState<Record<string, any>>({});
 
   // ANC Enrollment Modal State
   const [isAncModalOpen, setIsAncModalOpen] = useState(false);
@@ -74,6 +91,21 @@ export const MaternalNcdPage: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleOpenEmergencyModal = (info: EmergencyPatientInfo) => {
+    setEmergencyPatient(info);
+    setIsEmergencyModalOpen(true);
+  };
+
+  const handleBookingConfirmed = (bookingDetails: any) => {
+    if (emergencyPatient) {
+      const patientKey = emergencyPatient.id || emergencyPatient.name;
+      setConfirmedBookings((prev) => ({
+        ...prev,
+        [patientKey]: bookingDetails,
+      }));
+    }
+  };
 
   const handleEnrollAnc = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,7 +159,7 @@ export const MaternalNcdPage: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
           <Button
             variant="secondary"
             leftIcon={<Baby size={16} />}
@@ -146,7 +178,7 @@ export const MaternalNcdPage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.5rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.5rem', overflowX: 'auto' }}>
         <button
           onClick={() => setActiveTab('maternal')}
           style={{
@@ -161,6 +193,7 @@ export const MaternalNcdPage: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             gap: '0.35rem',
+            whiteSpace: 'nowrap',
           }}
         >
           <Baby size={16} />
@@ -181,6 +214,7 @@ export const MaternalNcdPage: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             gap: '0.35rem',
+            whiteSpace: 'nowrap',
           }}
         >
           <HeartPulse size={16} />
@@ -201,6 +235,7 @@ export const MaternalNcdPage: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             gap: '0.35rem',
+            whiteSpace: 'nowrap',
           }}
         >
           <ListTodo size={16} />
@@ -215,176 +250,385 @@ export const MaternalNcdPage: React.FC = () => {
         </div>
       ) : activeTab === 'maternal' ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1rem' }}>
-          {maternalList.map((m) => (
-            <Card
-              key={m.id}
-              variant="bordered"
-              style={{
-                borderLeft: m.high_risk_flag ? '4px solid var(--color-danger)' : '4px solid var(--color-success)',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      backgroundColor: m.high_risk_flag ? 'var(--color-danger-bg)' : 'var(--color-success-bg)',
-                      color: m.high_risk_flag ? 'var(--color-danger)' : 'var(--color-success)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '1.25rem',
-                    }}
-                  >
-                    🤰
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>
-                      {m.patient_name}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-                      {m.patient_mrn} • Gravida: {m.gravida}, Parity: {m.parity}
-                    </div>
-                  </div>
-                </div>
+          {maternalList.map((m) => {
+            const patientKey = m.patient_id || m.id || m.patient_name;
+            const booking = confirmedBookings[patientKey];
 
-                {m.high_risk_flag ? (
-                  <Badge variant="danger" dot>{t('programs.high_risk_badge')}</Badge>
-                ) : (
-                  <Badge variant="success">{t('programs.routine_badge')}</Badge>
-                )}
-              </div>
-
-              {/* High Risk Factor Tags */}
-              {m.risk_factors && m.risk_factors.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.25rem' }}>
-                  {m.risk_factors.map((rf: string) => (
-                    <span
-                      key={rf}
+            return (
+              <Card
+                key={m.id}
+                variant="bordered"
+                style={{
+                  borderLeft: m.high_risk_flag ? '4px solid var(--color-danger)' : '4px solid var(--color-success)',
+                  backgroundColor: '#ffffff',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div
                       style={{
-                        fontSize: '0.6875rem',
-                        fontWeight: 700,
-                        backgroundColor: 'var(--color-danger-bg)',
-                        color: 'var(--color-danger-text)',
-                        padding: '0.15rem 0.5rem',
-                        borderRadius: 'var(--radius-sm)',
-                        border: '1px solid var(--color-danger-border)',
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        backgroundColor: m.high_risk_flag ? 'var(--color-danger-bg)' : 'var(--color-success-bg)',
+                        color: m.high_risk_flag ? 'var(--color-danger)' : 'var(--color-success)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1.25rem',
                       }}
                     >
-                      ⚠ {rf.replace(/_/g, ' ')}
-                    </span>
-                  ))}
-                </div>
-              )}
+                      🤰
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>
+                        {m.patient_name}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+                        {m.patient_mrn} • Gravida: {m.gravida}, Parity: {m.parity}
+                      </div>
+                    </div>
+                  </div>
 
-              {/* Key Metrics */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginTop: '0.5rem', padding: '0.75rem', backgroundColor: 'var(--bg-surface-secondary)', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
-                <div>
-                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{t('programs.hb_level')}</div>
-                  <div style={{ fontSize: '0.9375rem', fontWeight: 800, color: m.hemoglobin_level && m.hemoglobin_level < 8 ? 'var(--color-danger)' : 'var(--text-primary)' }}>
-                    {m.hemoglobin_level ? `${m.hemoglobin_level} g/dL` : 'N/A'}
-                  </div>
+                  {m.high_risk_flag ? (
+                    <Badge variant="danger" dot>{t('programs.high_risk_badge')}</Badge>
+                  ) : (
+                    <Badge variant="success">{t('programs.routine_badge')}</Badge>
+                  )}
                 </div>
-                <div>
-                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{t('programs.trimester')}</div>
-                  <div style={{ fontSize: '0.9375rem', fontWeight: 800, color: 'var(--accent-blue)' }}>
-                    T{m.trimester} ({m.anc_visits_completed}/4)
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{t('programs.edd')}</div>
-                  <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                    {m.edd_date}
-                  </div>
-                </div>
-              </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', paddingTop: '0.5rem' }}>
-                <span>ASHA Assigned: <strong>{m.assigned_asha_name || 'Rekha Bai'}</strong></span>
-                <span style={{ color: 'var(--color-danger)', fontWeight: 600 }}>Due: {m.next_visit_due || 'Overdue'}</span>
-              </div>
-            </Card>
-          ))}
+                {/* High Risk Factor Tags */}
+                {m.risk_factors && m.risk_factors.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.5rem' }}>
+                    {m.risk_factors.map((rf: string) => (
+                      <span
+                        key={rf}
+                        style={{
+                          fontSize: '0.6875rem',
+                          fontWeight: 700,
+                          backgroundColor: 'var(--color-danger-bg)',
+                          color: 'var(--color-danger-text)',
+                          padding: '0.15rem 0.5rem',
+                          borderRadius: 'var(--radius-sm)',
+                          border: '1px solid var(--color-danger-border)',
+                        }}
+                      >
+                        ⚠ {rf.replace(/_/g, ' ')}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Key Metrics */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginTop: '0.5rem', padding: '0.75rem', backgroundColor: 'var(--bg-surface-secondary)', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{t('programs.hb_level')}</div>
+                    <div style={{ fontSize: '0.9375rem', fontWeight: 800, color: m.hemoglobin_level && m.hemoglobin_level < 8 ? 'var(--color-danger)' : 'var(--text-primary)' }}>
+                      {m.hemoglobin_level ? `${m.hemoglobin_level} g/dL` : 'N/A'}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{t('programs.trimester')}</div>
+                    <div style={{ fontSize: '0.9375rem', fontWeight: 800, color: 'var(--accent-blue)' }}>
+                      T{m.trimester} ({m.anc_visits_completed}/4)
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{t('programs.edd')}</div>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      {m.edd_date}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', paddingTop: '0.5rem' }}>
+                  <span>ASHA Assigned: <strong>{m.assigned_asha_name || 'Rekha Bai'}</strong></span>
+                  <span style={{ color: 'var(--color-danger)', fontWeight: 600 }}>Due: {m.next_visit_due || 'Overdue'}</span>
+                </div>
+
+                {/* HIGH RISK DIRECT EMERGENCY ACTIONS & FAST-TRACK PHC BOOKING */}
+                {m.high_risk_flag && (
+                  <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px dashed var(--color-danger-border)' }}>
+                    {booking ? (
+                      <div style={{
+                        padding: '0.6rem 0.75rem',
+                        backgroundColor: 'var(--color-success-bg)',
+                        border: '1px solid var(--color-success-border)',
+                        borderRadius: 'var(--radius-lg)',
+                        fontSize: '0.75rem',
+                        color: 'var(--color-success-text)',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '0.5rem',
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <CheckCircle2 size={16} />
+                          <span>Emergency Token #{booking.tokenNumber} Confirmed at {booking.facility}</span>
+                        </div>
+                        <button
+                          onClick={() => handleOpenEmergencyModal({
+                            id: m.patient_id || m.id,
+                            name: m.patient_name,
+                            mrn: m.patient_mrn,
+                            highRiskReason: m.risk_factors?.join(', ') || 'Severe High Risk Pregnancy',
+                            vitalsSummary: `Hb: ${m.hemoglobin_level || '6.8'} g/dL • EDD: ${m.edd_date}`,
+                          })}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            textDecoration: 'underline',
+                            cursor: 'pointer',
+                            color: 'var(--color-success-text)',
+                            fontWeight: 800,
+                            fontSize: '0.75rem',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          View Pass
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{
+                            fontSize: '0.6875rem',
+                            fontWeight: 800,
+                            textTransform: 'uppercase',
+                            color: 'var(--color-danger)',
+                            letterSpacing: '0.05em',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                          }}>
+                            <Zap size={13} fill="currentColor" /> Critical Fast-Track Action Required
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <button
+                            onClick={() => handleOpenEmergencyModal({
+                              id: m.patient_id || m.id,
+                              name: m.patient_name,
+                              mrn: m.patient_mrn,
+                              condition: `High Risk Pregnancy (Trimester ${m.trimester}, Hb ${m.hemoglobin_level || 'Low'} g/dL)`,
+                              highRiskReason: m.risk_factors?.join(', ') || 'Severe Anemia & Previous C-Section',
+                              vitalsSummary: `Hb: ${m.hemoglobin_level || '6.8'} g/dL • EDD: ${m.edd_date}`,
+                            })}
+                            style={{
+                              flex: 1,
+                              backgroundColor: 'var(--color-danger)',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: 'var(--radius-lg)',
+                              padding: '0.55rem 0.85rem',
+                              fontSize: '0.75rem',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.35rem',
+                              boxShadow: '0 2px 4px rgba(220, 38, 38, 0.25)',
+                              transition: 'all 0.15s ease-in-out',
+                            }}
+                          >
+                            <Zap size={14} fill="#fff" />
+                            <span>⚡ Book Emergency PHC Appointment</span>
+                          </button>
+
+                          <button
+                            onClick={() => setIsSosModalOpen(true)}
+                            style={{
+                              backgroundColor: 'var(--color-danger-bg)',
+                              color: 'var(--color-danger)',
+                              border: '1px solid var(--color-danger-border)',
+                              borderRadius: 'var(--radius-lg)',
+                              padding: '0.55rem 0.75rem',
+                              fontSize: '0.75rem',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                              transition: 'all 0.15s ease-in-out',
+                            }}
+                            title="Dispatch 108 Emergency Ambulance"
+                          >
+                            <Siren size={14} />
+                            <span>108 SOS</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              </Card>
+            );
+          })}
         </div>
       ) : activeTab === 'ncd' ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1rem' }}>
-          {ncdList.map((n) => (
-            <Card
-              key={n.id}
-              variant="bordered"
-              style={{
-                borderLeft: n.severity === 'CRITICAL_HIGH_RISK' ? '4px solid var(--color-danger)' : n.severity === 'STAGE_2' ? '4px solid var(--color-saffron)' : '4px solid var(--color-success)',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      backgroundColor: n.severity === 'CRITICAL_HIGH_RISK' ? 'var(--color-danger-bg)' : 'var(--accent-blue-subtle)',
-                      color: n.severity === 'CRITICAL_HIGH_RISK' ? 'var(--color-danger)' : 'var(--accent-blue)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '1.25rem',
-                    }}
-                  >
-                    💓
+          {ncdList.map((n) => {
+            const isCritical = n.severity === 'CRITICAL_HIGH_RISK' || n.severity === 'STAGE_2';
+            const patientKey = n.patient_id || n.id || n.patient_name;
+            const booking = confirmedBookings[patientKey];
+
+            return (
+              <Card
+                key={n.id}
+                variant="bordered"
+                style={{
+                  borderLeft: isCritical ? '4px solid var(--color-danger)' : '4px solid var(--color-success)',
+                  backgroundColor: '#ffffff',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        backgroundColor: isCritical ? 'var(--color-danger-bg)' : 'var(--accent-blue-subtle)',
+                        color: isCritical ? 'var(--color-danger)' : 'var(--accent-blue)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1.25rem',
+                      }}
+                    >
+                      💓
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>
+                        {n.patient_name}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+                        {n.patient_mrn} • Condition: <strong>{n.condition_type}</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Badge variant={n.severity === 'CRITICAL_HIGH_RISK' ? 'danger' : n.severity === 'STAGE_2' ? 'saffron' : 'success'} dot>
+                    {n.severity}
+                  </Badge>
+                </div>
+
+                {/* Vitals */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.5rem', padding: '0.75rem', backgroundColor: 'var(--bg-surface-secondary)', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{t('programs.blood_pressure')}</div>
+                    <div style={{ fontSize: '1rem', fontWeight: 800, color: n.systolic_bp && n.systolic_bp >= 140 ? 'var(--color-danger)' : 'var(--text-primary)' }}>
+                      {n.systolic_bp ? `${n.systolic_bp}/${n.diastolic_bp} mmHg` : 'N/A'}
+                    </div>
                   </div>
                   <div>
-                    <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>
-                      {n.patient_name}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
-                      {n.patient_mrn} • Condition: <strong>{n.condition_type}</strong>
+                    <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{t('programs.blood_sugar')}</div>
+                    <div style={{ fontSize: '1rem', fontWeight: 800, color: n.fasting_blood_sugar && n.fasting_blood_sugar >= 126 ? 'var(--color-danger)' : 'var(--text-primary)' }}>
+                      {n.fasting_blood_sugar ? `${n.fasting_blood_sugar} mg/dL` : 'N/A'}
                     </div>
                   </div>
                 </div>
 
-                <Badge variant={n.severity === 'CRITICAL_HIGH_RISK' ? 'danger' : n.severity === 'STAGE_2' ? 'saffron' : 'success'} dot>
-                  {n.severity}
-                </Badge>
-              </div>
+                {n.notes && (
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                    {n.notes}
+                  </p>
+                )}
 
-              {/* Vitals */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.5rem', padding: '0.75rem', backgroundColor: 'var(--bg-surface-secondary)', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
-                <div>
-                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{t('programs.blood_pressure')}</div>
-                  <div style={{ fontSize: '1rem', fontWeight: 800, color: n.systolic_bp && n.systolic_bp >= 140 ? 'var(--color-danger)' : 'var(--text-primary)' }}>
-                    {n.systolic_bp ? `${n.systolic_bp}/${n.diastolic_bp} mmHg` : 'N/A'}
-                  </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', paddingTop: '0.5rem' }}>
+                  <span>ASHA: <strong>{n.assigned_asha_name || 'Rekha Bai'}</strong></span>
+                  <span>Next Checkup: <strong>{n.next_checkup_due}</strong></span>
                 </div>
-                <div>
-                  <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>{t('programs.blood_sugar')}</div>
-                  <div style={{ fontSize: '1rem', fontWeight: 800, color: n.fasting_blood_sugar && n.fasting_blood_sugar >= 126 ? 'var(--color-danger)' : 'var(--text-primary)' }}>
-                    {n.fasting_blood_sugar ? `${n.fasting_blood_sugar} mg/dL` : 'N/A'}
+
+                {/* HIGH RISK NCD DIRECT EMERGENCY ACTIONS */}
+                {isCritical && (
+                  <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px dashed var(--color-danger-border)' }}>
+                    {booking ? (
+                      <div style={{
+                        padding: '0.6rem 0.75rem',
+                        backgroundColor: 'var(--color-success-bg)',
+                        border: '1px solid var(--color-success-border)',
+                        borderRadius: 'var(--radius-lg)',
+                        fontSize: '0.75rem',
+                        color: 'var(--color-success-text)',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <CheckCircle2 size={16} />
+                          <span>Emergency Token #{booking.tokenNumber} Confirmed ({booking.facility})</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          onClick={() => handleOpenEmergencyModal({
+                            id: n.patient_id || n.id,
+                            name: n.patient_name,
+                            mrn: n.patient_mrn,
+                            condition: `Critical NCD: ${n.condition_type} (BP: ${n.systolic_bp}/${n.diastolic_bp} mmHg)`,
+                            highRiskReason: `Uncontrolled ${n.condition_type} requiring immediate medical evaluation`,
+                            vitalsSummary: `BP: ${n.systolic_bp}/${n.diastolic_bp} mmHg • Sugar: ${n.fasting_blood_sugar || 'N/A'} mg/dL`,
+                          })}
+                          style={{
+                            flex: 1,
+                            backgroundColor: 'var(--color-danger)',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: 'var(--radius-lg)',
+                            padding: '0.55rem 0.85rem',
+                            fontSize: '0.75rem',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.35rem',
+                            boxShadow: '0 2px 4px rgba(220, 38, 38, 0.25)',
+                          }}
+                        >
+                          <Zap size={14} fill="#fff" />
+                          <span>⚡ Book Emergency PHC Appointment</span>
+                        </button>
+                        <button
+                          onClick={() => setIsSosModalOpen(true)}
+                          style={{
+                            backgroundColor: 'var(--color-danger-bg)',
+                            color: 'var(--color-danger)',
+                            border: '1px solid var(--color-danger-border)',
+                            borderRadius: 'var(--radius-lg)',
+                            padding: '0.55rem 0.75rem',
+                            fontSize: '0.75rem',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                          }}
+                          title="108 Emergency Ambulance"
+                        >
+                          <Siren size={14} />
+                          <span>108 SOS</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </div>
-
-              {n.notes && (
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                  {n.notes}
-                </p>
-              )}
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', paddingTop: '0.5rem' }}>
-                <span>ASHA: <strong>{n.assigned_asha_name || 'Rekha Bai'}</strong></span>
-                <span>Next Checkup: <strong>{n.next_checkup_due}</strong></span>
-              </div>
-            </Card>
-          ))}
+                )}
+              </Card>
+            );
+          })}
         </div>
       ) : (
         /* Frontline Tasks */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {tasks.map((task) => (
-            <Card key={task.task_id} variant="bordered" style={{ borderLeft: '4px solid var(--color-danger)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <Card key={task.task_id} variant="bordered" style={{ borderLeft: '4px solid var(--color-danger)', backgroundColor: '#ffffff' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <div style={{ padding: '0.5rem', backgroundColor: 'var(--color-danger-bg)', borderRadius: 'var(--radius-lg)', color: 'var(--color-danger)' }}>
                     <ShieldAlert size={20} />
@@ -405,9 +649,36 @@ export const MaternalNcdPage: React.FC = () => {
                   </div>
                 </div>
 
-                <Button size="sm" variant="secondary" onClick={() => alert(`Opening home visit checklist for ${task.patient_name}`)}>
-                  Conduct Visit
-                </Button>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    onClick={() => handleOpenEmergencyModal({
+                      id: task.patient_id,
+                      name: task.patient_name,
+                      mrn: task.patient_mrn,
+                      condition: task.description,
+                      highRiskReason: task.priority || 'Immediate Clinical Attention Required',
+                    })}
+                    style={{
+                      backgroundColor: 'var(--color-danger)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 'var(--radius-lg)',
+                      padding: '0.45rem 0.75rem',
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                    }}
+                  >
+                    <Zap size={14} fill="#fff" />
+                    <span>⚡ Emergency PHC Slot</span>
+                  </button>
+                  <Button size="sm" variant="secondary" onClick={() => alert(`Opening home visit checklist for ${task.patient_name}`)}>
+                    Conduct Visit
+                  </Button>
+                </div>
               </div>
             </Card>
           ))}
@@ -524,6 +795,22 @@ export const MaternalNcdPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Emergency PHC Instant Booking Modal */}
+      <EmergencyPhcBookingModal
+        isOpen={isEmergencyModalOpen}
+        onClose={() => setIsEmergencyModalOpen(false)}
+        patient={emergencyPatient}
+        onSuccess={handleBookingConfirmed}
+      />
+
+      {/* 108 Emergency Ambulance Modal */}
+      <SosEmergencyModal
+        isOpen={isSosModalOpen}
+        onClose={() => setIsSosModalOpen(false)}
+      />
     </div>
   );
 };
+
+export default MaternalNcdPage;

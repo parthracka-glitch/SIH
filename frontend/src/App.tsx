@@ -33,43 +33,8 @@ const queryClient = new QueryClient({
   },
 });
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-  allowedRoles?: string[];
-}
-
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-  const { isAuthenticated, user } = useAuthStore();
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // If user is a Patient and attempts to access clinical/staff/admin routes
-  if (user?.role === 'PATIENT' && allowedRoles && !allowedRoles.includes('PATIENT')) {
-    return <Navigate to="/patient" replace />;
-  }
-
-  // If specific roles are required and user role doesn't match
-  if (allowedRoles && user && !allowedRoles.includes(user.role) && user.role !== 'SUPERADMIN') {
-    if (user.role === 'PATIENT') return <Navigate to="/patient" replace />;
-    if (user.role === 'DOCTOR') return <Navigate to="/doctor" replace />;
-    if (user.role === 'ASHA' || user.role === 'CHO' || user.role === 'ANM') return <Navigate to="/asha" replace />;
-    return <Navigate to="/dashboard" replace />;
-  }
-
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return <AppShell>{children}</AppShell>;
-};
-
-const RootRedirect: React.FC = () => {
-  const { isAuthenticated, user } = useAuthStore();
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-  if (user?.role === 'PATIENT') return <Navigate to="/patient" replace />;
-  if (user?.role === 'DOCTOR') return <Navigate to="/doctor" replace />;
-  if (user?.role === 'ASHA' || user?.role === 'CHO' || user?.role === 'ANM') return <Navigate to="/asha" replace />;
-  return <Navigate to="/dashboard" replace />;
 };
 
 export const App: React.FC = () => {
@@ -83,121 +48,36 @@ export const App: React.FC = () => {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
-
-          {/* Dedicated Role Dashboards */}
-          <Route
-            path="/patient"
-            element={
-              <ProtectedRoute allowedRoles={['PATIENT', 'SUPERADMIN']}>
-                <PatientDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/doctor"
-            element={
-              <ProtectedRoute allowedRoles={['DOCTOR', 'SUPERADMIN']}>
-                <DoctorDashboard />
-              </ProtectedRoute>
-            }
-          />
+          {/* Main ASHA Portal Views */}
+          <Route path="/" element={<Navigate to="/asha" replace />} />
           <Route
             path="/asha"
             element={
-              <ProtectedRoute allowedRoles={['ASHA', 'CHO', 'ANM', 'SUPERADMIN']}>
+              <ProtectedRoute>
                 <AshaDashboard />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['SUPERADMIN', 'DOCTOR', 'CHO', 'ANM', 'ASHA', 'NURSE', 'PHARMACIST', 'BILLING']}>
-                <DashboardPage />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Shared / Citizen Accessible Healthcare Features */}
-          <Route
-            path="/health-card"
-            element={
-              <ProtectedRoute allowedRoles={['PATIENT', 'SUPERADMIN', 'DOCTOR', 'ASHA', 'CHO', 'ANM']}>
-                <HealthCardPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/appointments"
-            element={
-              <ProtectedRoute allowedRoles={['PATIENT', 'SUPERADMIN', 'DOCTOR', 'ASHA', 'CHO', 'ANM']}>
-                <AppointmentsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/teleconsult"
-            element={
-              <ProtectedRoute allowedRoles={['PATIENT', 'SUPERADMIN', 'DOCTOR', 'ASHA', 'CHO', 'ANM']}>
-                <TeleconsultPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/pharmacy"
-            element={
-              <ProtectedRoute allowedRoles={['PATIENT', 'SUPERADMIN', 'DOCTOR', 'PHARMACIST', 'ASHA', 'CHO', 'ANM']}>
-                <PharmacyPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/facilities"
-            element={
-              <ProtectedRoute allowedRoles={['PATIENT', 'SUPERADMIN', 'DOCTOR', 'ASHA', 'CHO', 'ANM']}>
-                <FacilitiesPage />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Clinical / Staff / Hospital Hub Exclusive Features */}
-          <Route
             path="/patients"
             element={
-              <ProtectedRoute allowedRoles={['SUPERADMIN', 'DOCTOR', 'CHO', 'ANM', 'ASHA', 'NURSE']}>
+              <ProtectedRoute>
                 <PatientsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/referrals"
-            element={
-              <ProtectedRoute allowedRoles={['SUPERADMIN', 'DOCTOR', 'CHO', 'ANM', 'ASHA']}>
-                <ReferralsPage />
               </ProtectedRoute>
             }
           />
           <Route
             path="/ncd-tracking"
             element={
-              <ProtectedRoute allowedRoles={['SUPERADMIN', 'DOCTOR', 'CHO', 'ANM', 'ASHA']}>
+              <ProtectedRoute>
                 <MaternalNcdPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/lab"
-            element={
-              <ProtectedRoute allowedRoles={['SUPERADMIN', 'DOCTOR', 'LAB_TECH', 'NURSE']}>
-                <LaboratoryPage />
               </ProtectedRoute>
             }
           />
           <Route
             path="/emergency-dispatch"
             element={
-              <ProtectedRoute allowedRoles={['SUPERADMIN', 'DOCTOR', 'CHO', 'ANM', 'ASHA', 'NURSE']}>
+              <ProtectedRoute>
                 <EmergencyDispatchPage />
               </ProtectedRoute>
             }
@@ -205,31 +85,44 @@ export const App: React.FC = () => {
           <Route
             path="/immunization"
             element={
-              <ProtectedRoute allowedRoles={['SUPERADMIN', 'DOCTOR', 'CHO', 'ANM', 'ASHA', 'NURSE']}>
+              <ProtectedRoute>
                 <ImmunizationPage />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/analytics"
+            path="/health-card"
             element={
-              <ProtectedRoute allowedRoles={['SUPERADMIN', 'DOCTOR']}>
-                <AnalyticsPage />
+              <ProtectedRoute>
+                <HealthCardPage />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/admin"
+            path="/teleconsult"
             element={
-              <ProtectedRoute allowedRoles={['SUPERADMIN']}>
-                <AdminPage />
+              <ProtectedRoute>
+                <TeleconsultPage />
               </ProtectedRoute>
             }
           />
 
-          {/* Root & Catch-all dedicated redirect */}
-          <Route path="/" element={<RootRedirect />} />
-          <Route path="*" element={<RootRedirect />} />
+          {/* Redirect all legacy, admin, doctor & other endpoints to /asha */}
+          <Route path="/dashboard" element={<Navigate to="/asha" replace />} />
+          <Route path="/admin" element={<Navigate to="/asha" replace />} />
+          <Route path="/doctor" element={<Navigate to="/asha" replace />} />
+          <Route path="/patient" element={<Navigate to="/asha" replace />} />
+          <Route path="/analytics" element={<Navigate to="/asha" replace />} />
+          <Route path="/facilities" element={<Navigate to="/asha" replace />} />
+          <Route path="/pharmacy" element={<Navigate to="/asha" replace />} />
+          <Route path="/referrals" element={<Navigate to="/asha" replace />} />
+          <Route path="/lab" element={<Navigate to="/asha" replace />} />
+          <Route path="/appointments" element={<Navigate to="/asha" replace />} />
+          <Route path="/login" element={<Navigate to="/asha" replace />} />
+          <Route path="/signup" element={<Navigate to="/asha" replace />} />
+
+          {/* Catch-all redirect to /asha */}
+          <Route path="*" element={<Navigate to="/asha" replace />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

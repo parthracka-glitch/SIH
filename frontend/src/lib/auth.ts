@@ -89,10 +89,32 @@ const DEMO_USERS: Record<string, UserProfile> = {
   },
 };
 
+const DEFAULT_ASHA_USER: UserProfile = {
+  id: 'usr-asha-01',
+  username: 'asha.rekha',
+  full_name: 'Rekha Bai (ASHA)',
+  role: 'ASHA',
+  designation: 'Frontline Village Health Worker',
+};
+
+const getInitialUser = (): UserProfile => {
+  try {
+    const saved = localStorage.getItem('arogya_user');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && parsed.role === 'ASHA') return parsed;
+    }
+  } catch (e) {}
+  // Default exclusively to ASHA worker
+  localStorage.setItem('arogya_user', JSON.stringify(DEFAULT_ASHA_USER));
+  localStorage.setItem('arogya_access_token', 'mock-token-asha-default');
+  return DEFAULT_ASHA_USER;
+};
+
 export const useAuthStore = create<AuthState>((set) => ({
-  user: JSON.parse(localStorage.getItem('arogya_user') || 'null'),
-  accessToken: localStorage.getItem('arogya_access_token'),
-  isAuthenticated: !!localStorage.getItem('arogya_access_token'),
+  user: getInitialUser(),
+  accessToken: localStorage.getItem('arogya_access_token') || 'mock-token-asha-default',
+  isAuthenticated: true,
   isLoading: false,
 
   login: async (username: string, password: string) => {

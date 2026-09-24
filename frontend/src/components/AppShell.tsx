@@ -1,78 +1,48 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   LayoutDashboard,
-  User,
-  Calendar,
-  Video,
-  FileText,
-  Package,
+  Users,
+  Activity,
+  Siren,
+  PlusCircle,
+  Menu,
+  Search,
+  Globe,
   Bell,
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Menu,
-  Search,
-  Globe,
-  PlusCircle,
-  Activity,
-  Users,
-  Building,
-  CreditCard,
-  MapPin,
-  Siren,
   QrCode,
-  X
+  X,
+  ShieldCheck,
 } from "lucide-react";
 import { useAuthStore } from "../lib/auth";
 import { changeLanguage } from "../lib/i18n";
-import { AIAgentChatbot } from "./AIAgentChatbot";
 import { QRScanner } from "./QRScanner";
-
-export type UserRole = "Patient" | "ASHA" | "Doctor" | "Facility" | "Admin";
 
 interface AppShellProps {
   children: React.ReactNode;
 }
 
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
 
-  const getUserRole = (userRole?: string): UserRole => {
-    if (userRole === "PATIENT") return "Patient";
-    if (userRole === "DOCTOR") return "Doctor";
-    if (userRole === "ASHA" || userRole === "CHO" || userRole === "ANM") return "ASHA";
-    if (userRole === "SUPERADMIN") return "Admin";
-    return "Patient";
-  };
-
-  const [role, setRole] = useState<UserRole>(() => getUserRole(user?.role));
-
-  useEffect(() => {
-    if (user?.role) {
-      setRole(getUserRole(user.role));
-    }
-  }, [user?.role]);
-
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [language, setLanguage] = useState<"en" | "hi" | "mr">("en");
+  const [language, setLanguage] = useState<"en" | "hi" | "mr">(() => {
+    return (localStorage.getItem("arogya_lang") as "en" | "hi" | "mr") || "en";
+  });
   const [showNotifications, setShowNotifications] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
 
   const handleLanguageChange = (lang: "en" | "hi" | "mr") => {
     setLanguage(lang);
-    changeLanguage(lang === "mr" ? "hi" : lang); // Fallback to Hindi if Marathi translation is pending
-  };
-
-  const handleRoleChange = (newRole: UserRole) => {
-    setRole(newRole);
-    if (newRole === "Patient") navigate("/patient");
-    else if (newRole === "ASHA") navigate("/asha");
-    else if (newRole === "Doctor") navigate("/doctor");
-    else navigate("/dashboard");
+    changeLanguage(lang);
   };
 
   const handleLogout = () => {
@@ -80,103 +50,29 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     navigate("/login");
   };
 
-  const getHomePath = () => {
-    if (role === "Patient") return "/patient";
-    if (role === "Doctor") return "/doctor";
-    if (role === "ASHA") return "/asha";
-    return "/dashboard";
-  };
-
-  // Grouped Navigation by Role
-  const getNavItems = () => {
-    switch (role) {
-      case "Patient":
-        return [
-          {
-            group: "MY HEALTH PORTAL",
-            items: [
-              { name: "My Health Dashboard", icon: LayoutDashboard, path: "/patient" },
-              { name: "ABHA Health Card", icon: CreditCard, path: "/health-card" }
-            ]
-          },
-          {
-            group: "CARE & CONSULTATION",
-            items: [
-              { name: "Book Appointments", icon: Calendar, path: "/appointments" },
-              { name: "Video Doctor", icon: Video, path: "/teleconsult" },
-              { name: "Prescriptions & Meds", icon: Package, path: "/pharmacy" }
-            ]
-          },
-          {
-            group: "FIND HEALTHCARE",
-            items: [
-              { name: "Nearby Clinics & Beds", icon: MapPin, path: "/facilities" }
-            ]
-          }
-        ];
-      case "ASHA":
-        return [
-          {
-            group: "FIELD OPERATIONS",
-            items: [
-              { name: "ASHA Field Station", icon: LayoutDashboard, path: "/asha" },
-              { name: "Village Households", icon: Users, path: "/patients" },
-              { name: "Maternal & NCD", icon: Activity, path: "/ncd-tracking" }
-            ]
-          },
-          {
-            group: "CLINICAL TRIAGE",
-            items: [
-              { name: "Emergency Dispatch", icon: Siren, path: "/emergency-dispatch" },
-              { name: "Immunization", icon: PlusCircle, path: "/immunization" },
-              { name: "Offline Sync", icon: Package, path: "/asha" }
-            ]
-          }
-        ];
-      case "Doctor":
-        return [
-          {
-            group: "OPD CONSOLE",
-            items: [
-              { name: "Doctor OPD Console", icon: LayoutDashboard, path: "/doctor" },
-              { name: "Video Teleconsult", icon: Video, path: "/teleconsult" },
-              { name: "Patient Records", icon: FileText, path: "/patients" }
-            ]
-          },
-          {
-            group: "CLINICAL CARE",
-            items: [
-              { name: "Appointments", icon: Calendar, path: "/appointments" },
-              { name: "Jan Aushadhi Rx", icon: PlusCircle, path: "/pharmacy" },
-              { name: "Closed-Loop Referrals", icon: Building, path: "/referrals" }
-            ]
-          }
-        ];
-      default:
-        return [
-          {
-            group: "ADMINISTRATION",
-            items: [
-              { name: "Enterprise Hub", icon: LayoutDashboard, path: "/dashboard" },
-              { name: "Facility & Wards", icon: Building, path: "/admin" },
-              { name: "Epidemic Analytics", icon: Activity, path: "/analytics" }
-            ]
-          },
-          {
-            group: "SERVICES",
-            items: [
-              { name: "Central Pharmacy", icon: Package, path: "/pharmacy" },
-              { name: "Diagnostic Lab", icon: FileText, path: "/lab" },
-              { name: "108 Emergency Fleet", icon: Siren, path: "/emergency-dispatch" }
-            ]
-          }
-        ];
-    }
-  };
+  // Dedicated ASHA Frontline Navigation
+  const navGroups = [
+    {
+      group: "FIELD OPERATIONS",
+      items: [
+        { name: "ASHA Field Station", icon: LayoutDashboard, path: "/asha" },
+        { name: "Village Households", icon: Users, path: "/patients" },
+        { name: "High-Risk Maternal & NCD", icon: Activity, path: "/ncd-tracking" },
+      ],
+    },
+    {
+      group: "CLINICAL & EMERGENCY",
+      items: [
+        { name: "108 Emergency Dispatch", icon: Siren, path: "/emergency-dispatch" },
+        { name: "Child Immunization & UIP", icon: PlusCircle, path: "/immunization" },
+      ],
+    },
+  ];
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#F6F9FC] font-sans antialiased text-slate-800">
-      {/* 1. DESKTOP SIDEBAR */}
+      
+      {/* 1. DESKTOP SIDEBAR — ONLY FOR ASHA */}
       <aside
         className={`hidden md:flex flex-col bg-white border-r border-slate-200 transition-all duration-300 z-30 ${
           isCollapsed ? "w-20" : "w-64"
@@ -184,8 +80,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       >
         {/* Brand Header */}
         <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-          {!isCollapsed && (
-            <Link to={getHomePath()} className="flex items-center space-x-2.5">
+          {!isCollapsed ? (
+            <Link to="/asha" className="flex items-center space-x-2.5">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-700 to-teal-500 flex items-center justify-center text-white font-black shadow-md">
                 AM
               </div>
@@ -193,17 +89,17 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                 <span className="font-extrabold text-slate-900 tracking-tight text-base leading-tight block">
                   Arogya<span className="text-blue-600">Mitra</span>
                 </span>
-                <span className="text-[10px] font-bold text-teal-600 uppercase tracking-wider block">
-                  {role === "Patient" ? "Citizen Health" : "Ayushman Care"}
+                <span className="text-[10px] font-bold text-teal-700 uppercase tracking-wider block">
+                  ASHA Portal · Ward 4
                 </span>
               </div>
             </Link>
-          )}
-          {isCollapsed && (
-            <Link to={getHomePath()} className="w-9 h-9 mx-auto rounded-xl bg-gradient-to-tr from-blue-700 to-teal-500 flex items-center justify-center text-white font-black shadow-md">
+          ) : (
+            <Link to="/asha" className="w-9 h-9 mx-auto rounded-xl bg-gradient-to-tr from-blue-700 to-teal-500 flex items-center justify-center text-white font-black shadow-md">
               AM
             </Link>
           )}
+
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition hidden lg:block cursor-pointer"
@@ -213,9 +109,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           </button>
         </div>
 
-        {/* Navigation Groups */}
+        {/* Navigation Items */}
         <div className="flex-1 overflow-y-auto p-3 space-y-6">
-          {getNavItems().map((group, idx) => (
+          {navGroups.map((group, idx) => (
             <div key={idx} className="space-y-1">
               {!isCollapsed && (
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3 mb-2">
@@ -229,13 +125,14 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                    title={item.name}
+                    className={`flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-bold transition duration-150 ${
                       isActive
-                        ? "bg-blue-50 text-blue-700 shadow-xs font-bold"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                        ? "bg-blue-50 text-blue-700 shadow-2xs font-extrabold"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                     }`}
                   >
-                    <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-blue-600" : "text-slate-400"}`} />
+                    <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-blue-600" : "text-slate-400"}`} />
                     {!isCollapsed && <span className="truncate">{item.name}</span>}
                   </Link>
                 );
@@ -244,21 +141,19 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           ))}
         </div>
 
-        {/* User Card & Logout */}
-        <div className="p-3 border-t border-slate-100 bg-slate-50/50 space-y-2">
+        {/* ASHA User Footer */}
+        <div className="p-3 border-t border-slate-100 bg-slate-50/50">
           <div className="flex items-center space-x-3 p-2 rounded-xl">
-            <div className={`w-8 h-8 rounded-full font-bold flex items-center justify-center text-xs flex-shrink-0 ${
-              role === "Patient" ? "bg-teal-100 text-teal-800" : "bg-blue-100 text-blue-700"
-            }`}>
-              {user?.full_name ? user.full_name[0] : (role === "Patient" ? "P" : "D")}
+            <div className="w-8 h-8 rounded-full font-bold flex items-center justify-center text-xs flex-shrink-0 bg-blue-100 text-blue-800">
+              RB
             </div>
             {!isCollapsed && (
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold text-slate-800 truncate">
-                  {user?.full_name || (role === "Patient" ? "Ramesh Yadav" : "Dr. Rajesh Kumar")}
+                  Rekha Bai (ASHA)
                 </p>
-                <p className="text-[10px] font-semibold text-emerald-600 uppercase">
-                  {role === "Patient" ? "Citizen ABHA" : `${role} Portal`}
+                <p className="text-[10px] font-semibold text-emerald-700 uppercase">
+                  Ward 4 Sinnar
                 </p>
               </div>
             )}
@@ -275,62 +170,56 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
       {/* 2. MAIN VIEW CONTAINER */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        
         {/* Top Navbar */}
         <header className="h-16 bg-white border-b border-slate-200 px-4 md:px-8 flex items-center justify-between z-20">
+          
+          {/* Left: Mobile Menu & Search */}
           <div className="flex items-center space-x-3 flex-1 max-w-md">
             <button
               onClick={() => setIsMobileOpen(true)}
               className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 cursor-pointer"
-              aria-label="Open navigation menu"
+              aria-label="Open menu"
             >
               <Menu className="w-5 h-5" />
             </button>
+
             <div className="relative w-full">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder={role === "Patient" ? "Search health records, doctors, prescriptions..." : "Search patient name, ABHA ID, or health facility..."}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition"
+                placeholder="Search village households, patient name, or ABHA..."
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition"
               />
             </div>
           </div>
 
-          {/* Right Controls: Role Switcher, Scan QR, Language, Notifications */}
+          {/* Right: ASHA Badge, Scan QR, Language, Notifications */}
           <div className="flex items-center space-x-2 sm:space-x-3">
-            {/* Quick Role Switcher (Visible only for Staff/Admin, hidden for Patient) */}
-            {role !== "Patient" && user?.role !== "PATIENT" && (
-              <div className="hidden sm:flex items-center bg-slate-100 p-1 rounded-xl">
-                {(["ASHA", "Doctor", "Admin"] as UserRole[]).map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => handleRoleChange(r)}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                      role === r ? "bg-white text-blue-700 shadow-xs" : "text-slate-500 hover:text-slate-900"
-                    }`}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
-            )}
+            
+            {/* Frontline ASHA Badge (NO role switcher buttons) */}
+            <div className="hidden lg:flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-800 px-3 py-1.5 rounded-xl text-xs font-bold">
+              <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+              <span>ASHA Frontline: Ward 4</span>
+            </div>
 
-            {/* Quick Camera QR Scan Trigger */}
+            {/* Scan ABHA Button */}
             <button
               onClick={() => setShowScanner(true)}
-              className="hidden lg:flex items-center space-x-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-xl text-xs font-bold border border-blue-200 transition cursor-pointer"
+              className="flex items-center space-x-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 transition cursor-pointer"
             >
               <QrCode className="w-3.5 h-3.5 text-blue-600" />
-              <span>Scan ABHA</span>
+              <span className="hidden sm:inline">Scan ABHA</span>
             </button>
 
             {/* Language Selector */}
             <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-2 py-1 text-xs">
-              <Globe className="w-3.5 h-3.5 text-slate-400 mr-1.5" />
+              <Globe className="w-3.5 h-3.5 text-slate-500 mr-1.5" />
               <select
-                aria-label="Select Interface Language"
+                aria-label="Select Language"
                 value={language}
                 onChange={(e) => handleLanguageChange(e.target.value as any)}
-                className="bg-transparent font-semibold text-slate-700 outline-none cursor-pointer"
+                className="bg-transparent font-bold text-slate-800 outline-none cursor-pointer text-xs"
               >
                 <option value="en">English</option>
                 <option value="hi">हिंदी (Hindi)</option>
@@ -352,19 +241,19 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               {showNotifications && (
                 <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 z-50 space-y-3">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                    <h4 className="font-bold text-xs text-slate-900">Health Alerts & Broadcasts</h4>
-                    <span className="text-[10px] text-teal-600 font-bold bg-teal-50 px-2 py-0.5 rounded-full">
-                      Live Stream
+                    <h4 className="font-bold text-xs text-slate-900">ASHA Ward Alerts</h4>
+                    <span className="text-[10px] text-teal-700 font-bold bg-teal-50 px-2 py-0.5 rounded-full">
+                      Live
                     </span>
                   </div>
                   <div className="space-y-2 text-xs">
                     <div className="p-2.5 rounded-xl bg-red-50 border border-red-100 text-red-900">
                       <p className="font-bold text-[11px]">Emergency Ambulance 108</p>
-                      <p className="text-[10px] text-red-700 mt-0.5">Dispatched to Sinnar Sub-Center for Sita Devi (Hb 6.8 g/dL).</p>
+                      <p className="text-[10px] text-red-700 mt-0.5">Dispatched to Sinnar Ward 4 for Sita Devi.</p>
                     </div>
                     <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-100 text-blue-900">
-                      <p className="font-bold text-[11px]">Teleconsultation Scheduled</p>
-                      <p className="text-[10px] text-blue-700 mt-0.5">Gopal Singh with Dr. Priya Sharma at 10:30 AM.</p>
+                      <p className="font-bold text-[11px]">ANC Checkup Due</p>
+                      <p className="text-[10px] text-blue-700 mt-0.5">Kavita Shinde BP follow-up scheduled today.</p>
                     </div>
                   </div>
                 </div>
@@ -380,12 +269,12 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           </div>
         </main>
 
-        {/* 3. MOBILE BOTTOM NAVIGATION */}
+        {/* 3. MOBILE BOTTOM NAVIGATION — ONLY ASHA */}
         <nav
           aria-label="Mobile Bottom Navigation"
           className="md:hidden h-16 bg-white border-t border-slate-200 flex items-center justify-around px-2 z-20"
         >
-          {getNavItems()[0].items.map((item) => {
+          {navGroups[0].items.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
             return (
@@ -397,52 +286,41 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                 }`}
               >
                 <Icon className="w-5 h-5" />
-                <span className="text-[10px] mt-1 truncate max-w-[65px]">{item.name}</span>
+                <span className="text-[10px] mt-1 truncate max-w-[70px]">{item.name}</span>
               </Link>
             );
           })}
         </nav>
       </div>
 
-      {/* 4. MOBILE SLIDEOUT DRAWER */}
+      {/* 4. MOBILE SLIDEOUT DRAWER — ONLY ASHA */}
       {isMobileOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex md:hidden">
           <div className="w-72 bg-white h-full flex flex-col p-4 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <span className="font-black text-slate-900">Arogya Mitra Navigation</span>
+              <span className="font-black text-slate-900">Arogya Mitra · ASHA</span>
               <button onClick={() => setIsMobileOpen(false)} className="p-1.5 rounded-lg text-slate-400">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            {role !== "Patient" && user?.role !== "PATIENT" && (
-              <div className="flex items-center justify-around bg-slate-100 p-1 rounded-xl">
-                {(["ASHA", "Doctor", "Admin"] as UserRole[]).map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => { handleRoleChange(r); setIsMobileOpen(false); }}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
-                      role === r ? "bg-white text-blue-700 shadow-xs" : "text-slate-500"
-                    }`}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
-            )}
+
             <div className="flex-1 overflow-y-auto space-y-4">
-              {getNavItems().map((group, idx) => (
+              {navGroups.map((group, idx) => (
                 <div key={idx} className="space-y-1">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 mb-1">
                     {group.group}
                   </p>
                   {group.items.map((item) => {
                     const Icon = item.icon;
+                    const isActive = location.pathname === item.path;
                     return (
                       <Link
                         key={item.path}
                         to={item.path}
                         onClick={() => setIsMobileOpen(false)}
-                        className="flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50"
+                        className={`flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-bold transition ${
+                          isActive ? "bg-blue-50 text-blue-700" : "text-slate-700 hover:bg-slate-50"
+                        }`}
                       >
                         <Icon className="w-4 h-4 text-blue-600" />
                         <span>{item.name}</span>
@@ -457,10 +335,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         </div>
       )}
 
-      {/* 5. GLOBAL FLOATING VOICE AI TRIAGE DOCTOR */}
-      <AIAgentChatbot />
-
-      {/* 6. CAMERA QR SCANNER MODAL */}
+      {/* CAMERA QR SCANNER */}
       {showScanner && (
         <QRScanner
           onScan={(code) => {

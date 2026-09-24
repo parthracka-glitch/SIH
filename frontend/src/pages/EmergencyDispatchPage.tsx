@@ -1,66 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { api } from '../lib/api';
-import { Card } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
 import {
   Siren,
-  AlertTriangle,
-  HeartPulse,
-  Activity,
-  Radio,
+  Phone,
   Truck,
-  CheckCircle2,
+  MapPin,
   Clock,
-  Search,
-  Plus,
+  CheckCircle2,
   X,
   RefreshCw,
-  PhoneCall,
-  MapPin,
-  ShieldAlert,
-  Flame,
-  Stethoscope,
-  Send,
+  Building2,
+  User,
+  Heart,
+  Plus,
 } from 'lucide-react';
 
 export const EmergencyDispatchPage: React.FC = () => {
-  const { t } = useTranslation();
-
   const [fleet, setFleet] = useState<any[]>([]);
   const [dispatches, setDispatches] = useState<any[]>([]);
   const [patients, setPatients] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeDispatchId, setActiveDispatchId] = useState<string | null>(null);
-  const [traumaBayStatus, setTraumaBayStatus] = useState<any | null>(null);
+  const [selectedIncident, setSelectedIncident] = useState<any | null>(null);
 
   // Modals
   const [isDispatchModalOpen, setIsDispatchModalOpen] = useState(false);
-  const [isVitalsModalOpen, setIsVitalsModalOpen] = useState(false);
-
-  // Dispatch Form State
-  const [callerName, setCallerName] = useState('');
-  const [callerPhone, setCallerPhone] = useState('');
-  const [locationName, setLocationName] = useState('');
-  const [chiefComplaint, setChiefComplaint] = useState('');
-  const [urgency, setUrgency] = useState('EMERGENCY_CRITICAL');
-  const [selectedPatientId, setSelectedPatientId] = useState('');
-  const [selectedVehicleId, setSelectedVehicleId] = useState('');
-  const [isSubmittingDispatch, setIsSubmittingDispatch] = useState(false);
-
-  // Live Paramedic Vitals State (Stream simulator)
-  const [streamPulse, setStreamPulse] = useState(128);
-  const [streamSysBP, setStreamSysBP] = useState(90);
-  const [streamDiaBP, setStreamDiaBP] = useState(60);
-  const [streamSpO2, setStreamSpO2] = useState(89.0);
-  const [streamGCS, setStreamGCS] = useState(10);
-  const [streamO2Flow, setStreamO2Flow] = useState(10.0);
-  const [streamECG, setStreamECG] = useState('SINUS_TACHYCARDIA');
-  const [paramedicNotes, setParamedicNotes] = useState('');
-  const [isStreamingVitals, setIsStreamingVitals] = useState(false);
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
+
+  // Form State
+  const [callerName, setCallerName] = useState('Rekha Bai (ASHA)');
+  const [callerPhone, setCallerPhone] = useState('+91 98234 11204');
+  const [locationName, setLocationName] = useState('Ward 4, Sinnar Village (H-42)');
+  const [chiefComplaint, setChiefComplaint] = useState('Severe Bleeding & Labor Pain');
+  const [urgency, setUrgency] = useState('EMERGENCY_CRITICAL');
+  const [selectedVehicleId, setSelectedVehicleId] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -73,16 +46,11 @@ export const EmergencyDispatchPage: React.FC = () => {
       setFleet(fleetRes || []);
       const dList = dispatchesRes || [];
       setDispatches(dList);
-      if (dList.length > 0 && !activeDispatchId) {
-        setActiveDispatchId(dList[0].id);
-        fetchTraumaBay(dList[0].id);
+      if (dList.length > 0 && !selectedIncident) {
+        setSelectedIncident(dList[0]);
       }
-      const pList = patientsRes?.items || [];
-      setPatients(pList);
-      if (pList.length > 0 && !selectedPatientId) {
-        setSelectedPatientId(pList[0].id);
-      }
-      if (fleetRes && fleetRes.length > 0 && !selectedVehicleId) {
+      setPatients(patientsRes?.items || []);
+      if (fleetRes?.length > 0 && !selectedVehicleId) {
         setSelectedVehicleId(fleetRes[0].id);
       }
     } catch (err) {
@@ -92,970 +60,326 @@ export const EmergencyDispatchPage: React.FC = () => {
     }
   };
 
-  const fetchTraumaBay = async (dispatchId: string) => {
-    try {
-      const tb = await api.get(`/emergency/dispatches/${dispatchId}/trauma-bay`);
-      setTraumaBayStatus(tb);
-    } catch (err) {
-      console.error('Failed to load trauma bay status:', err);
-    }
-  };
-
   useEffect(() => {
     fetchData();
-    const timer = setInterval(() => {
-      // Auto-refresh telemetry every 10s
-      if (activeDispatchId) {
-        fetchTraumaBay(activeDispatchId);
-      }
-    }, 10000);
-    return () => clearInterval(timer);
-  }, [activeDispatchId]);
+  }, []);
 
-  const handleSelectDispatch = (d: any) => {
-    setActiveDispatchId(d.id);
-    fetchTraumaBay(d.id);
-  };
-
-  const handleCreateDispatchSubmit = async (e: React.FormEvent) => {
+  const handleDispatchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!callerName || !callerPhone || !locationName || !chiefComplaint) {
-      alert('Please fill all required emergency caller and triage details.');
+      alert('Please fill all required details.');
       return;
     }
 
     try {
-      setIsSubmittingDispatch(true);
+      setIsSubmitting(true);
       const res = await api.post('/emergency/dispatch', {
         caller_name: callerName,
         caller_phone: callerPhone,
         location_name: locationName,
-        pickup_lat: 26.9124,
-        pickup_lng: 75.7873,
-        patient_id: selectedPatientId || undefined,
+        pickup_lat: 19.8458,
+        pickup_lng: 73.9984,
         vehicle_id: selectedVehicleId || undefined,
         chief_complaint: chiefComplaint,
         urgency: urgency,
       });
 
       setIsDispatchModalOpen(false);
-      setActionSuccessMsg(`108 Emergency Ambulance Dispatched! ETA: ${res.estimated_arrival_minutes || 8} mins`);
+      setActionSuccessMsg(`Ambulance Dispatched! Vehicle is en-route (ETA: ${res.estimated_arrival_minutes || 8} mins).`);
       setTimeout(() => setActionSuccessMsg(null), 5000);
       fetchData();
-      setActiveDispatchId(res.id);
-      fetchTraumaBay(res.id);
+      setSelectedIncident(res);
     } catch (err) {
-      console.error('Failed to dispatch 108 emergency:', err);
-      alert('Dispatch failed. Please check network connectivity.');
+      console.error('Dispatch failed:', err);
+      alert('Failed to dispatch ambulance.');
     } finally {
-      setIsSubmittingDispatch(false);
+      setIsSubmitting(false);
     }
   };
 
-  const handleStreamVitalsSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeDispatchId) return;
-
-    try {
-      setIsStreamingVitals(true);
-      await api.post(`/emergency/dispatches/${activeDispatchId}/vitals`, {
-        pulse_bpm: streamPulse,
-        bp_systolic: streamSysBP,
-        bp_diastolic: streamDiaBP,
-        spo2_pct: streamSpO2,
-        ecg_rhythm: streamECG,
-        gcs_score: streamGCS,
-        oxygen_flow_lpm: streamO2Flow,
-        paramedic_notes: paramedicNotes || 'En-route telemetry packet transmitted to District Trauma Bay 1.',
-      });
-
-      setIsVitalsModalOpen(false);
-      setActionSuccessMsg('Paramedic vitals stream transmitted! Trauma Bay alerted.');
-      setTimeout(() => setActionSuccessMsg(null), 4000);
-      fetchData();
-      if (activeDispatchId) fetchTraumaBay(activeDispatchId);
-    } catch (err) {
-      console.error('Failed to stream vitals:', err);
-      alert('Failed to transmit en-route vitals.');
-    } finally {
-      setIsStreamingVitals(false);
-    }
-  };
-
-  const activeDispatch = dispatches.find((d) => d.id === activeDispatchId) || dispatches[0];
+  const activeAmbulances = fleet.filter((f) => f.is_available).length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '1rem',
-        }}
-      >
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-            <div
-              style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: 'var(--radius-lg)',
-                backgroundColor: 'rgba(239, 68, 68, 0.12)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--accent-red)',
-              }}
-            >
-              <Siren size={22} />
-            </div>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-              {t('emergency.title', '108 Emergency Command Hub & Pre-Hospital Trauma Bay')}
-            </h1>
-          </div>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem', marginBottom: 0 }}>
-            {t(
-              'emergency.subtitle',
-              'Real-Time ALS/BLS Ambulance Fleet Tracking, En-Route Paramedic Telemetry & District Hospital Trauma Bay Readiness'
-            )}
-          </p>
-        </div>
+    <div className="max-w-5xl mx-auto space-y-6 pb-20">
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <Button variant="secondary" onClick={fetchData} leftIcon={<RefreshCw size={16} />}>
-            {t('common.refresh', 'Refresh Fleet')}
-          </Button>
-          <Button
-            variant="danger"
-            onClick={() => setIsDispatchModalOpen(true)}
-            leftIcon={<Siren size={16} />}
-            style={{ backgroundColor: '#ef4444', color: '#ffffff', fontWeight: 800 }}
-          >
-            🚨 Dispatch 108 Ambulance
-          </Button>
-        </div>
-      </div>
-
+      {/* ─── TOAST NOTIFICATION ─── */}
       {actionSuccessMsg && (
-        <div
-          style={{
-            backgroundColor: 'rgba(239, 68, 68, 0.12)',
-            border: '1px solid #ef4444',
-            color: '#991b1b',
-            padding: '0.75rem 1.25rem',
-            borderRadius: 'var(--radius-lg)',
-            fontSize: '0.875rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            fontWeight: 700,
-          }}
-        >
-          <CheckCircle2 size={18} color="#ef4444" />
-          <span>{actionSuccessMsg}</span>
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl flex items-center justify-between text-sm font-medium">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+            <span>{actionSuccessMsg}</span>
+          </div>
+          <button onClick={() => setActionSuccessMsg(null)} className="text-emerald-600 hover:text-emerald-900">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
-      {/* Top 4 HUD Metrics */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '1rem',
-        }}
-      >
-        <Card style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div
-            style={{
-              width: '46px',
-              height: '46px',
-              borderRadius: 'var(--radius-lg)',
-              backgroundColor: 'rgba(239, 68, 68, 0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--accent-red)',
-            }}
-          >
-            <Flame size={24} />
-          </div>
-          <div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-              Active Emergency Calls
-            </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent-red)' }}>
-              {dispatches.length}
-            </div>
-          </div>
-        </Card>
-
-        <Card style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div
-            style={{
-              width: '46px',
-              height: '46px',
-              borderRadius: 'var(--radius-lg)',
-              backgroundColor: 'rgba(59, 130, 246, 0.12)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--accent-blue)',
-            }}
-          >
-            <Truck size={24} />
-          </div>
-          <div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-              108 Ambulances Ready (ALS/BLS)
-            </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent-blue)' }}>
-              {fleet.filter((f) => f.is_available).length} / {fleet.length}
-            </div>
-          </div>
-        </Card>
-
-        <Card style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div
-            style={{
-              width: '46px',
-              height: '46px',
-              borderRadius: 'var(--radius-lg)',
-              backgroundColor: 'rgba(16, 185, 129, 0.12)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--accent-green)',
-            }}
-          >
-            <Stethoscope size={24} />
-          </div>
-          <div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-              Trauma Bay 1 Hub Status
-            </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--accent-green)' }}>
-              ACTIVE & ON-CALL
-            </div>
-          </div>
-        </Card>
-
-        <Card style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div
-            style={{
-              width: '46px',
-              height: '46px',
-              borderRadius: 'var(--radius-lg)',
-              backgroundColor: 'rgba(245, 158, 11, 0.12)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#d97706',
-            }}
-          >
-            <Clock size={24} />
-          </div>
-          <div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-              Average Response Time
-            </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#d97706' }}>
-              8.4 mins
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Main Split: Left Dispatches & Map / Right En-Route Telemetry HUD & Trauma Bay */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) minmax(420px, 1.3fr)', gap: '1.5rem' }}>
-        {/* Left Column: Active Dispatches List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <Card style={{ padding: '1.25rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Radio size={18} color="var(--accent-red)" className="spin-slow" />
-                <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800 }}>Live Emergency Incidents</h3>
-              </div>
-              <Badge variant="danger">{dispatches.length} ACTIVE</Badge>
-            </div>
-
-            {isLoading ? (
-              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                <RefreshCw size={20} className="spin-animation" style={{ margin: '0 auto 0.5rem' }} />
-                <div>Loading Dispatches...</div>
-              </div>
-            ) : dispatches.length === 0 ? (
-              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                <div>No Active Emergency Calls</div>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {dispatches.map((d) => {
-                  const isSelected = d.id === activeDispatchId;
-                  const isCritical = d.urgency === 'EMERGENCY_CRITICAL';
-
-                  return (
-                    <div
-                      key={d.id}
-                      onClick={() => handleSelectDispatch(d)}
-                      style={{
-                        padding: '1rem',
-                        borderRadius: 'var(--radius-lg)',
-                        border: isSelected ? '2px solid var(--accent-red)' : '1px solid var(--border-light)',
-                        backgroundColor: isSelected ? 'rgba(239, 68, 68, 0.04)' : 'var(--bg-surface)',
-                        cursor: 'pointer',
-                        transition: 'all var(--transition-fast)',
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                        <span style={{ fontWeight: 800, color: 'var(--primary-navy)' }}>
-                          {d.dispatch_number}
-                        </span>
-                        <Badge variant={isCritical ? 'danger' : 'warning'}>
-                          {d.urgency}
-                        </Badge>
-                      </div>
-
-                      <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.2rem' }}>
-                        {d.chief_complaint}
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
-                        <MapPin size={13} color="var(--accent-red)" />
-                        <span>{d.location_name}</span>
-                      </div>
-
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', borderTop: '1px dashed var(--border-light)', paddingTop: '0.4rem', marginTop: '0.4rem' }}>
-                        <span style={{ color: 'var(--text-secondary)' }}>
-                          Caller: <strong>{d.caller_name}</strong> ({d.caller_phone})
-                        </span>
-                        <span style={{ color: 'var(--accent-blue)', fontWeight: 700 }}>
-                          🚑 {d.assigned_vehicle?.registration_number || '108-ALS-01'} (ETA {d.estimated_arrival_minutes}m)
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </Card>
-
-          {/* 108 Fleet Status Grid */}
-          <Card style={{ padding: '1.25rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800 }}>108 Fleet Readiness Radar</h3>
-              <Badge variant="info">{fleet.length} Vehicles</Badge>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {fleet.map((v) => (
-                <div
-                  key={v.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '0.6rem 0.8rem',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'var(--bg-surface-secondary)',
-                    border: '1px solid var(--border-light)',
-                    fontSize: '0.8125rem',
-                  }}
-                >
-                  <div>
-                    <strong style={{ color: 'var(--primary-navy)' }}>{v.registration_number}</strong>{' '}
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>({v.vehicle_type})</span>
-                    <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
-                      Pilot: {v.driver_name} • {v.driver_phone}
-                    </div>
-                  </div>
-                  <Badge variant={v.is_available ? 'success' : 'danger'}>
-                    {v.is_available ? 'AVAILABLE' : 'DISPATCHED'}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </Card>
+      {/* ─── 1. CLEAN TOP HEADER ─── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">108 Emergency Ambulance</h1>
+          <p className="text-sm text-slate-500 mt-0.5">Quick dispatch & live ambulance tracking for Ward 4</p>
         </div>
 
-        {/* Right Column: Paramedic Telemetry Stream & District Hospital Trauma Bay Hub */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {activeDispatch ? (
-            <>
-              {/* Paramedic En-Route Telemetry HUD */}
-              <Card style={{ padding: '1.5rem', backgroundColor: '#0f172a', color: '#ffffff' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <HeartPulse size={22} color="#f43f5e" className="pulse-animation" />
-                    <div>
-                      <div style={{ fontSize: '1.125rem', fontWeight: 900, color: '#ffffff' }}>
-                        En-Route Paramedic Telemetry HUD
+        <div className="flex items-center gap-2.5">
+          <a
+            href="tel:108"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition"
+          >
+            <Phone className="w-4 h-4 text-emerald-600" />
+            <span>Call 108</span>
+          </a>
+          <button
+            onClick={() => setIsDispatchModalOpen(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold bg-red-600 hover:bg-red-700 text-white shadow-sm transition"
+          >
+            <Siren className="w-4 h-4" />
+            <span>Dispatch Ambulance</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ─── 2. SIMPLE, UNCLUTTERED STATS ─── */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-white p-4 rounded-xl border border-slate-200">
+          <span className="text-xs font-medium text-slate-500 block">Active Pickups</span>
+          <span className="text-2xl font-bold text-red-600 block mt-1">{dispatches.length}</span>
+        </div>
+
+        <div className="bg-white p-4 rounded-xl border border-slate-200">
+          <span className="text-xs font-medium text-slate-500 block">Available Ambulances</span>
+          <span className="text-2xl font-bold text-blue-600 block mt-1">{activeAmbulances} / {fleet.length}</span>
+        </div>
+
+        <div className="bg-white p-4 rounded-xl border border-slate-200">
+          <span className="text-xs font-medium text-slate-500 block">Nearest PHC Status</span>
+          <span className="text-base font-bold text-emerald-700 block mt-1.5">Sinnar PHC (Ready)</span>
+        </div>
+      </div>
+
+      {/* ─── 3. ACTIVE AMBULANCE PICKUPS (CLEAN LIST) ─── */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
+            Active Ambulance Runs ({dispatches.length})
+          </h2>
+          <button
+            onClick={fetchData}
+            className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800 transition"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
+        </div>
+
+        {dispatches.length === 0 ? (
+          <div className="bg-white rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-400">
+            <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+            <p className="text-sm font-medium text-slate-700">No active emergency calls</p>
+            <p className="text-xs text-slate-400 mt-0.5">All local patients are stable.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {dispatches.map((d) => {
+              const isSelected = selectedIncident?.id === d.id;
+
+              return (
+                <div
+                  key={d.id}
+                  onClick={() => setSelectedIncident(d)}
+                  className={`bg-white rounded-xl border p-4 sm:p-5 transition cursor-pointer ${
+                    isSelected
+                      ? 'border-red-500 ring-2 ring-red-500/10 shadow-sm'
+                      : 'border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    
+                    {/* Patient & Complaint Details */}
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900 text-sm">{d.dispatch_number}</span>
+                        <span className="text-xs text-slate-400">•</span>
+                        <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded">
+                          {d.urgency === 'EMERGENCY_CRITICAL' ? 'Critical Emergency' : 'Urgent'}
+                        </span>
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                        Ambulance: {activeDispatch.assigned_vehicle?.registration_number} • Call #{activeDispatch.dispatch_number}
+
+                      <p className="font-semibold text-slate-800 text-sm">
+                        {d.chief_complaint}
+                      </p>
+
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500 pt-0.5">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                        <span>{d.location_name}</span>
+                        <span className="text-slate-300">·</span>
+                        <span>Caller: {d.caller_name}</span>
                       </div>
                     </div>
+
+                    {/* Ambulance & Action Buttons */}
+                    <div className="flex items-center gap-2.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 flex-shrink-0">
+                      <div className="text-left sm:text-right mr-1">
+                        <div className="flex items-center gap-1 font-bold text-sm text-blue-700">
+                          <Truck className="w-4 h-4" />
+                          <span>{d.assigned_vehicle?.registration_number || '108-ALS-01'}</span>
+                        </div>
+                        <span className="text-xs text-slate-500 block">
+                          ETA {d.estimated_arrival_minutes || 8} mins
+                        </span>
+                      </div>
+
+                      <a
+                        href={`tel:${d.caller_phone || '108'}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition"
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                        <span>Call Driver</span>
+                      </a>
+                    </div>
+
                   </div>
 
-                  <Button
-                    size="sm"
-                    variant="primary"
-                    onClick={() => setIsVitalsModalOpen(true)}
-                    leftIcon={<Send size={14} />}
-                    style={{ backgroundColor: '#3b82f6', color: '#ffffff' }}
-                  >
-                    Simulate Vitals Packet
-                  </Button>
-                </div>
-
-                {/* Vitals HUD 4-Box Grid */}
-                {(() => {
-                  const latest = activeDispatch.latest_vitals || {
-                    pulse_bpm: 132,
-                    bp_systolic: 85,
-                    bp_diastolic: 50,
-                    spo2_pct: 88.0,
-                    gcs_score: 9,
-                    ecg_rhythm: 'SINUS_TACHYCARDIA_WITH_PVC',
-                    oxygen_flow_lpm: 12.0,
-                    paramedic_notes: 'High-flow O2 NRB mask applied. Cervical spine immobilized. Rapid transit to Trauma Bay.',
-                  };
-
-                  const isHypoxic = (latest.spo2_pct || 98) < 90;
-                  const isHypotensive = (latest.bp_systolic || 120) < 90;
-
-                  return (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>
-                        {/* SpO2 */}
-                        <div
-                          style={{
-                            backgroundColor: isHypoxic ? 'rgba(239, 68, 68, 0.25)' : 'rgba(30, 41, 59, 0.7)',
-                            border: isHypoxic ? '1px solid #ef4444' : '1px solid #334155',
-                            padding: '0.85rem',
-                            borderRadius: 'var(--radius-lg)',
-                            textAlign: 'center',
-                          }}
-                        >
-                          <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>SpO2 (%)</div>
-                          <div style={{ fontSize: '1.75rem', fontWeight: 900, color: isHypoxic ? '#f87171' : '#38bdf8' }}>
-                            {latest.spo2_pct}%
-                          </div>
-                          {isHypoxic && (
-                            <div style={{ fontSize: '0.6875rem', color: '#fca5a5', fontWeight: 800 }}>
-                              HYPOXIC ALERT
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Pulse / Heart Rate */}
-                        <div
-                          style={{
-                            backgroundColor: 'rgba(30, 41, 59, 0.7)',
-                            border: '1px solid #334155',
-                            padding: '0.85rem',
-                            borderRadius: 'var(--radius-lg)',
-                            textAlign: 'center',
-                          }}
-                        >
-                          <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>Pulse (BPM)</div>
-                          <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#f43f5e' }}>
-                            {latest.pulse_bpm}
-                          </div>
-                          <div style={{ fontSize: '0.6875rem', color: '#fda4af' }}>TACHYCARDIA</div>
-                        </div>
-
-                        {/* Blood Pressure */}
-                        <div
-                          style={{
-                            backgroundColor: isHypotensive ? 'rgba(239, 68, 68, 0.25)' : 'rgba(30, 41, 59, 0.7)',
-                            border: isHypotensive ? '1px solid #ef4444' : '1px solid #334155',
-                            padding: '0.85rem',
-                            borderRadius: 'var(--radius-lg)',
-                            textAlign: 'center',
-                          }}
-                        >
-                          <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>BP (mmHg)</div>
-                          <div style={{ fontSize: '1.75rem', fontWeight: 900, color: isHypotensive ? '#f87171' : '#4ade80' }}>
-                            {latest.bp_systolic}/{latest.bp_diastolic}
-                          </div>
-                          {isHypotensive && (
-                            <div style={{ fontSize: '0.6875rem', color: '#fca5a5', fontWeight: 800 }}>
-                              HYPOTENSION
-                            </div>
-                          )}
-                        </div>
-
-                        {/* GCS Coma Scale */}
-                        <div
-                          style={{
-                            backgroundColor: 'rgba(30, 41, 59, 0.7)',
-                            border: '1px solid #334155',
-                            padding: '0.85rem',
-                            borderRadius: 'var(--radius-lg)',
-                            textAlign: 'center',
-                          }}
-                        >
-                          <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>GCS Score</div>
-                          <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#fbbf24' }}>
-                            {latest.gcs_score} / 15
-                          </div>
-                          <div style={{ fontSize: '0.6875rem', color: '#fde68a' }}>MODERATE TRAUMA</div>
+                  {/* Expanded Detail (Only when selected) */}
+                  {isSelected && (
+                    <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-slate-50/70 p-3.5 rounded-lg">
+                      <div>
+                        <span className="font-bold text-slate-500 uppercase block text-[10px] mb-1">En-Route Patient Vitals</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="bg-white px-2.5 py-1 rounded border border-slate-200 font-medium text-slate-800">
+                            SpO2: <strong className="text-red-600">{d.latest_vitals?.spo2_pct || 88}%</strong>
+                          </span>
+                          <span className="bg-white px-2.5 py-1 rounded border border-slate-200 font-medium text-slate-800">
+                            BP: <strong className="text-red-600">{d.latest_vitals?.bp_systolic || 85}/{d.latest_vitals?.bp_diastolic || 50}</strong>
+                          </span>
+                          <span className="bg-white px-2.5 py-1 rounded border border-slate-200 font-medium text-slate-800">
+                            Pulse: <strong>{d.latest_vitals?.pulse_bpm || 128} bpm</strong>
+                          </span>
                         </div>
                       </div>
 
-                      {/* ECG Rhythm & O2 Flow */}
-                      <div
-                        style={{
-                          backgroundColor: 'rgba(30, 41, 59, 0.5)',
-                          padding: '0.85rem',
-                          borderRadius: 'var(--radius-md)',
-                          border: '1px solid #334155',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          fontSize: '0.8125rem',
-                        }}
-                      >
-                        <div>
-                          <span style={{ color: '#94a3b8' }}>Live ECG Rhythm: </span>
-                          <strong style={{ color: '#38bdf8' }}>{latest.ecg_rhythm}</strong>
-                        </div>
-                        <div>
-                          <span style={{ color: '#94a3b8' }}>O2 Flow Rate: </span>
-                          <strong style={{ color: '#4ade80' }}>{latest.oxygen_flow_lpm} LPM (NRB)</strong>
-                        </div>
-                      </div>
-
-                      {/* Paramedic En-Route Radio Notes */}
-                      <div
-                        style={{
-                          backgroundColor: 'rgba(15, 23, 42, 0.8)',
-                          padding: '0.85rem',
-                          borderRadius: 'var(--radius-md)',
-                          border: '1px solid #334155',
-                          fontSize: '0.8125rem',
-                        }}
-                      >
-                        <div style={{ color: '#94a3b8', fontWeight: 700, marginBottom: '0.2rem' }}>
-                          Paramedic Radio Transmission:
-                        </div>
-                        <p style={{ margin: 0, color: '#e2e8f0', fontStyle: 'italic' }}>
-                          "{latest.paramedic_notes || 'Patient stable en-route.'}"
+                      <div>
+                        <span className="font-bold text-slate-500 uppercase block text-[10px] mb-1">Receiving Facility</span>
+                        <p className="font-semibold text-slate-800 flex items-center gap-1">
+                          <Building2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Sinnar PHC Casualty (Room 102 - Doctor Alerted)</span>
                         </p>
                       </div>
                     </div>
-                  );
-                })()}
-              </Card>
-
-              {/* District Hospital Trauma Bay 1 Readiness Center */}
-              <Card style={{ padding: '1.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800, color: 'var(--primary-navy)' }}>
-                      Trauma Bay 1 Hospital Pre-Arrival Protocol
-                    </h3>
-                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                      District Hospital Jaipur • Automated Code Red Activation
-                    </div>
-                  </div>
-                  <Badge variant="danger">CODE RED ACTIVE</Badge>
+                  )}
                 </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '0.75rem 1rem',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: 'rgba(16, 185, 129, 0.08)',
-                      border: '1px solid #10b981',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <CheckCircle2 size={18} color="#10b981" />
-                      <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>
-                        Trauma Resuscitation Bay 1 Reserved & Cleared
-                      </span>
-                    </div>
-                    <Badge variant="success">READY</Badge>
-                  </div>
-
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '0.75rem 1rem',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: 'rgba(16, 185, 129, 0.08)',
-                      border: '1px solid #10b981',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <CheckCircle2 size={18} color="#10b981" />
-                      <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>
-                        Trauma Team Assembled (General Surgeon, Anesthetist, Orthopedic)
-                      </span>
-                    </div>
-                    <Badge variant="success">IN BAY</Badge>
-                  </div>
-
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '0.75rem 1rem',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: 'rgba(59, 130, 246, 0.08)',
-                      border: '1px solid var(--accent-blue)',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <CheckCircle2 size={18} color="var(--accent-blue)" />
-                      <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>
-                        Blood Bank: 2 Units O-Negative Uncrossmatched Packed RBCs Primed
-                      </span>
-                    </div>
-                    <Badge variant="info">PRIMED</Badge>
-                  </div>
-
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '0.75rem 1rem',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: 'rgba(59, 130, 246, 0.08)',
-                      border: '1px solid var(--accent-blue)',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <CheckCircle2 size={18} color="var(--accent-blue)" />
-                      <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>
-                        Emergency CT Trauma-Scan Fast Track Slot Cleared
-                      </span>
-                    </div>
-                    <Badge variant="info">CLEARED</Badge>
-                  </div>
-                </div>
-              </Card>
-            </>
-          ) : (
-            <Card style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-              <Siren size={36} style={{ margin: '0 auto 0.75rem', opacity: 0.5 }} />
-              <div>No Active Emergency Selected</div>
-            </Card>
-          )}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* MODAL 1: Quick Dispatch 108 Ambulance */}
+      {/* ─── 4. DISPATCH 108 AMBULANCE MODAL (SIMPLE & FAST) ─── */}
       {isDispatchModalOpen && (
-        <div className="modal-backdrop">
-          <div className="modal-container" style={{ maxWidth: '600px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Siren size={22} color="var(--accent-red)" />
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>
-                  Dispatch 108 Emergency Ambulance (ALS/BLS)
-                </h2>
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-xl space-y-4">
+            
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Siren className="w-5 h-5 text-red-600" />
+                <h3 className="font-bold text-base text-slate-900">Dispatch 108 Ambulance</h3>
               </div>
               <button
                 onClick={() => setIsDispatchModalOpen(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                className="text-slate-400 hover:text-slate-600 p-1"
               >
-                <X size={20} />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateDispatchSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                    Caller Name
-                  </label>
-                  <Input
-                    placeholder="e.g. Ramesh Kumar (Bystander)"
-                    value={callerName}
-                    onChange={(e) => setCallerName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                    Caller Phone (108 Link)
-                  </label>
-                  <Input
-                    placeholder="e.g. +91-9876543210"
-                    value={callerPhone}
-                    onChange={(e) => setCallerPhone(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
+            <form onSubmit={handleDispatchSubmit} className="space-y-3 text-xs">
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                  Incident Pickup Location / Landmark
-                </label>
-                <Input
-                  placeholder="e.g. NH-21 Highway Junction, Mile 44, Jaipur Rural..."
+                <label className="font-bold text-slate-600 block mb-1">Pickup House / Village Location</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Ward 4, House H-42, Sinnar"
                   value={locationName}
                   onChange={(e) => setLocationName(e.target.value)}
                   required
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-semibold outline-none focus:border-blue-500 focus:bg-white"
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                  Chief Complaint & Trauma Symptoms
-                </label>
-                <Input
-                  placeholder="e.g. High-speed collision, severe chest trauma, altered sensorium..."
+                <label className="font-bold text-slate-600 block mb-1">Emergency Complaint</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Labor pains, severe bleeding, chest pain, high fever"
                   value={chiefComplaint}
                   onChange={(e) => setChiefComplaint(e.target.value)}
                   required
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-semibold outline-none focus:border-blue-500 focus:bg-white"
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                    Urgency Level
-                  </label>
-                  <select
-                    value={urgency}
-                    onChange={(e) => setUrgency(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.6rem',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid var(--border-light)',
-                      fontSize: '0.875rem',
-                    }}
-                  >
-                    <option value="EMERGENCY_CRITICAL">🚨 EMERGENCY CRITICAL (Red Code)</option>
-                    <option value="URGENT">URGENT (Yellow Code)</option>
-                    <option value="NON_EMERGENCY">NON-EMERGENCY (Green Code)</option>
-                  </select>
+                  <label className="font-bold text-slate-600 block mb-1">Caller / ASHA Name</label>
+                  <input
+                    type="text"
+                    value={callerName}
+                    onChange={(e) => setCallerName(e.target.value)}
+                    required
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-semibold outline-none focus:border-blue-500 focus:bg-white"
+                  />
                 </div>
-
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                    Assign 108 Ambulance
-                  </label>
-                  <select
-                    value={selectedVehicleId}
-                    onChange={(e) => setSelectedVehicleId(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.6rem',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid var(--border-light)',
-                      fontSize: '0.875rem',
-                    }}
-                  >
-                    {fleet.map((v) => (
-                      <option key={v.id} value={v.id}>
-                        {v.registration_number} ({v.vehicle_type}) - {v.driver_name}
-                      </option>
-                    ))}
-                  </select>
+                  <label className="font-bold text-slate-600 block mb-1">Contact Phone</label>
+                  <input
+                    type="text"
+                    value={callerPhone}
+                    onChange={(e) => setCallerPhone(e.target.value)}
+                    required
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-semibold outline-none focus:border-blue-500 focus:bg-white"
+                  />
                 </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                  Link Citizen ABHA / Patient (Optional)
-                </label>
+                <label className="font-bold text-slate-600 block mb-1">Assign Nearest Ambulance</label>
                 <select
-                  value={selectedPatientId}
-                  onChange={(e) => setSelectedPatientId(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--border-light)',
-                    fontSize: '0.875rem',
-                  }}
+                  value={selectedVehicleId}
+                  onChange={(e) => setSelectedVehicleId(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-semibold outline-none"
                 >
-                  <option value="">-- Anonymous / Unknown Citizen --</option>
-                  {patients.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.first_name} {p.last_name} ({p.mrn}) • {p.gender}
+                  {fleet.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.registration_number} ({v.vehicle_type}) — Pilot: {v.driver_name}
                     </option>
                   ))}
                 </select>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-                <Button variant="secondary" type="button" onClick={() => setIsDispatchModalOpen(false)}>
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsDispatchModalOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800"
+                >
                   Cancel
-                </Button>
-                <Button
-                  variant="danger"
+                </button>
+                <button
                   type="submit"
-                  disabled={isSubmittingDispatch}
-                  style={{ backgroundColor: '#ef4444', color: '#ffffff', fontWeight: 800 }}
+                  disabled={isSubmitting}
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white shadow-sm transition"
                 >
-                  {isSubmittingDispatch ? 'Dispatching Fleet...' : '🚨 Confirm 108 Dispatch'}
-                </Button>
+                  {isSubmitting ? 'Dispatching...' : 'Confirm 108 Dispatch'}
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL 2: Simulate Paramedic Telemetry */}
-      {isVitalsModalOpen && activeDispatch && (
-        <div className="modal-backdrop">
-          <div className="modal-container" style={{ maxWidth: '580px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Activity size={20} color="var(--accent-blue)" />
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>
-                  Transmit Live Paramedic Vitals Stream
-                </h2>
-              </div>
-              <button
-                onClick={() => setIsVitalsModalOpen(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleStreamVitalsSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                    Pulse / Heart Rate (BPM)
-                  </label>
-                  <Input
-                    type="number"
-                    value={streamPulse}
-                    onChange={(e) => setStreamPulse(parseInt(e.target.value) || 0)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                    Oxygen Saturation SpO2 (%)
-                  </label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    value={streamSpO2}
-                    onChange={(e) => setStreamSpO2(parseFloat(e.target.value) || 0)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                    Blood Pressure Systolic (mmHg)
-                  </label>
-                  <Input
-                    type="number"
-                    value={streamSysBP}
-                    onChange={(e) => setStreamSysBP(parseInt(e.target.value) || 0)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                    Blood Pressure Diastolic (mmHg)
-                  </label>
-                  <Input
-                    type="number"
-                    value={streamDiaBP}
-                    onChange={(e) => setStreamDiaBP(parseInt(e.target.value) || 0)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                    Glasgow Coma Scale (GCS /15)
-                  </label>
-                  <Input
-                    type="number"
-                    value={streamGCS}
-                    onChange={(e) => setStreamGCS(parseInt(e.target.value) || 0)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                    Oxygen Flow Rate (LPM)
-                  </label>
-                  <Input
-                    type="number"
-                    step="0.5"
-                    value={streamO2Flow}
-                    onChange={(e) => setStreamO2Flow(parseFloat(e.target.value) || 0)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                  ECG Rhythm Interpretation
-                </label>
-                <select
-                  value={streamECG}
-                  onChange={(e) => setStreamECG(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--border-light)',
-                    fontSize: '0.875rem',
-                  }}
-                >
-                  <option value="NORMAL_SINUS_RHYTHM">Normal Sinus Rhythm</option>
-                  <option value="SINUS_TACHYCARDIA">Sinus Tachycardia (&gt;100 bpm)</option>
-                  <option value="SINUS_TACHYCARDIA_WITH_PVC">Sinus Tachycardia with PVC</option>
-                  <option value="VENTRICULAR_FIBRILLATION">🚨 Ventricular Fibrillation (V-Fib)</option>
-                  <option value="ATRIAL_FIBRILLATION">Atrial Fibrillation (A-Fib)</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                  Paramedic En-Route Observations
-                </label>
-                <Input
-                  placeholder="e.g. Non-rebreather mask applied, IV line established, ETA 6 minutes..."
-                  value={paramedicNotes}
-                  onChange={(e) => setParamedicNotes(e.target.value)}
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-                <Button variant="secondary" type="button" onClick={() => setIsVitalsModalOpen(false)}>
-                  Cancel
-                </Button>
-                <Button variant="primary" type="submit" disabled={isStreamingVitals}>
-                  {isStreamingVitals ? 'Transmitting...' : 'Transmit Telemetry to Trauma Bay'}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
+
+export default EmergencyDispatchPage;
