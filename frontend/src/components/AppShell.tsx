@@ -17,8 +17,20 @@ import {
   QrCode,
   X,
   ShieldCheck,
+  Stethoscope,
+  Calendar,
+  Pill,
+  FlaskConical,
+  FileText,
+  BarChart3,
+  Building2,
+  Video,
+  CreditCard,
+  Settings,
+  UserCircle,
+  ChevronDown,
 } from "lucide-react";
-import { useAuthStore } from "../lib/auth";
+import { useAuthStore, type UserProfile } from "../lib/auth";
 import { changeLanguage } from "../lib/i18n";
 import { QRScanner } from "./QRScanner";
 
@@ -26,11 +38,153 @@ interface AppShellProps {
   children: React.ReactNode;
 }
 
+interface NavItem {
+  name: string;
+  icon: any;
+  path: string;
+}
+
+interface NavGroup {
+  group: string;
+  items: NavItem[];
+}
+
+/** Role-based navigation configuration */
+const getNavGroups = (role?: string): NavGroup[] => {
+  switch (role) {
+    case 'ASHA':
+    case 'CHO':
+    case 'ANM':
+      return [
+        {
+          group: "FIELD OPERATIONS",
+          items: [
+            { name: "ASHA Field Station", icon: LayoutDashboard, path: "/asha" },
+            { name: "Village Households", icon: Users, path: "/patients" },
+            { name: "High-Risk Maternal & NCD", icon: Activity, path: "/ncd-tracking" },
+          ],
+        },
+        {
+          group: "CLINICAL & EMERGENCY",
+          items: [
+            { name: "108 Emergency Dispatch", icon: Siren, path: "/emergency-dispatch" },
+            { name: "Child Immunization & UIP", icon: PlusCircle, path: "/immunization" },
+          ],
+        },
+      ];
+
+    case 'DOCTOR':
+      return [
+        {
+          group: "CLINICAL",
+          items: [
+            { name: "Dashboard", icon: LayoutDashboard, path: "/doctor" },
+            { name: "Patients", icon: Users, path: "/patients" },
+            { name: "Appointments", icon: Calendar, path: "/appointments" },
+            { name: "Teleconsultation", icon: Video, path: "/teleconsult" },
+          ],
+        },
+        {
+          group: "DIAGNOSTICS",
+          items: [
+            { name: "Laboratory", icon: FlaskConical, path: "/lab" },
+            { name: "Pharmacy", icon: Pill, path: "/pharmacy" },
+            { name: "Referrals", icon: FileText, path: "/referrals" },
+          ],
+        },
+        {
+          group: "EMERGENCY",
+          items: [
+            { name: "108 Emergency Dispatch", icon: Siren, path: "/emergency-dispatch" },
+            { name: "Maternal & NCD Tracking", icon: Activity, path: "/ncd-tracking" },
+          ],
+        },
+      ];
+
+    case 'SUPERADMIN':
+      return [
+        {
+          group: "ADMINISTRATION",
+          items: [
+            { name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
+            { name: "Admin Panel", icon: Settings, path: "/admin" },
+            { name: "Analytics", icon: BarChart3, path: "/analytics" },
+            { name: "Facilities", icon: Building2, path: "/facilities" },
+          ],
+        },
+        {
+          group: "OPERATIONS",
+          items: [
+            { name: "Patients", icon: Users, path: "/patients" },
+            { name: "Appointments", icon: Calendar, path: "/appointments" },
+            { name: "Pharmacy", icon: Pill, path: "/pharmacy" },
+            { name: "Laboratory", icon: FlaskConical, path: "/lab" },
+            { name: "Referrals", icon: FileText, path: "/referrals" },
+          ],
+        },
+        {
+          group: "CLINICAL",
+          items: [
+            { name: "Teleconsultation", icon: Video, path: "/teleconsult" },
+            { name: "Emergency Dispatch", icon: Siren, path: "/emergency-dispatch" },
+            { name: "Immunization", icon: PlusCircle, path: "/immunization" },
+            { name: "Maternal & NCD", icon: Activity, path: "/ncd-tracking" },
+          ],
+        },
+      ];
+
+    case 'PATIENT':
+      return [
+        {
+          group: "MY HEALTH",
+          items: [
+            { name: "My Dashboard", icon: LayoutDashboard, path: "/patient" },
+            { name: "Health Card", icon: CreditCard, path: "/health-card" },
+            { name: "Appointments", icon: Calendar, path: "/appointments" },
+            { name: "Teleconsult", icon: Video, path: "/teleconsult" },
+          ],
+        },
+      ];
+
+    default:
+      return [
+        {
+          group: "NAVIGATION",
+          items: [
+            { name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
+            { name: "Patients", icon: Users, path: "/patients" },
+          ],
+        },
+      ];
+  }
+};
+
+/** Get role display info */
+const getRoleInfo = (role?: string) => {
+  switch (role) {
+    case 'ASHA': return { label: 'ASHA Frontline', color: 'blue', badge: 'Ward 4' };
+    case 'CHO': return { label: 'Community Health Officer', color: 'teal', badge: 'PHC' };
+    case 'ANM': return { label: 'Auxiliary Nurse Midwife', color: 'purple', badge: 'SC' };
+    case 'DOCTOR': return { label: 'Doctor', color: 'emerald', badge: 'OPD' };
+    case 'SUPERADMIN': return { label: 'Administrator', color: 'amber', badge: 'Admin' };
+    case 'PATIENT': return { label: 'Patient', color: 'sky', badge: 'ABHA' };
+    default: return { label: role || 'User', color: 'slate', badge: '' };
+  }
+};
+
+/** Quick-switch demo accounts */
+const QUICK_SWITCH_ROLES = [
+  { label: 'ASHA Worker', username: 'asha', password: 'asha123', icon: ShieldCheck, color: 'blue' },
+  { label: 'Doctor', username: 'doctor', password: 'doctor123', icon: Stethoscope, color: 'emerald' },
+  { label: 'Patient', username: 'patient', password: 'patient123', icon: UserCircle, color: 'sky' },
+  { label: 'Admin', username: 'admin', password: 'admin123', icon: Settings, color: 'amber' },
+];
+
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user, logout, login } = useAuthStore();
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -39,6 +193,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   });
   const [showNotifications, setShowNotifications] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
 
   const handleLanguageChange = (lang: "en" | "hi" | "mr") => {
     setLanguage(lang);
@@ -50,29 +205,35 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     navigate("/login");
   };
 
-  // Dedicated ASHA Frontline Navigation
-  const navGroups = [
-    {
-      group: "FIELD OPERATIONS",
-      items: [
-        { name: "ASHA Field Station", icon: LayoutDashboard, path: "/asha" },
-        { name: "Village Households", icon: Users, path: "/patients" },
-        { name: "High-Risk Maternal & NCD", icon: Activity, path: "/ncd-tracking" },
-      ],
-    },
-    {
-      group: "CLINICAL & EMERGENCY",
-      items: [
-        { name: "108 Emergency Dispatch", icon: Siren, path: "/emergency-dispatch" },
-        { name: "Child Immunization & UIP", icon: PlusCircle, path: "/immunization" },
-      ],
-    },
-  ];
+  const handleRoleSwitch = async (username: string, password: string) => {
+    setShowRoleSwitcher(false);
+    try {
+      const loggedUser = await login(username, password);
+      // Navigate to the role's home page
+      switch (loggedUser.role) {
+        case 'PATIENT': navigate('/patient'); break;
+        case 'DOCTOR': navigate('/doctor'); break;
+        case 'ASHA':
+        case 'CHO':
+        case 'ANM': navigate('/asha'); break;
+        case 'SUPERADMIN': navigate('/dashboard'); break;
+        default: navigate('/dashboard'); break;
+      }
+    } catch (err) {
+      console.error('Role switch failed:', err);
+    }
+  };
+
+  const navGroups = getNavGroups(user?.role);
+  const roleInfo = getRoleInfo(user?.role);
+  const userInitials = user?.full_name
+    ? user.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+    : 'U';
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#F6F9FC] font-sans antialiased text-slate-800">
       
-      {/* 1. DESKTOP SIDEBAR — ONLY FOR ASHA */}
+      {/* 1. DESKTOP SIDEBAR */}
       <aside
         className={`hidden md:flex flex-col bg-white border-r border-slate-200 transition-all duration-300 z-30 ${
           isCollapsed ? "w-20" : "w-64"
@@ -81,8 +242,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         {/* Brand Header */}
         <div className="p-4 border-b border-slate-100 flex items-center justify-between">
           {!isCollapsed ? (
-            <Link to="/asha" className="flex items-center space-x-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-700 to-teal-500 flex items-center justify-center text-white font-black shadow-md">
+            <Link to="/" className="flex items-center space-x-2.5">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-700 to-teal-500 flex items-center justify-center text-white font-black shadow-md text-sm">
                 AM
               </div>
               <div>
@@ -90,12 +251,12 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                   Arogya<span className="text-blue-600">Mitra</span>
                 </span>
                 <span className="text-[10px] font-bold text-teal-700 uppercase tracking-wider block">
-                  ASHA Portal · Ward 4
+                  {roleInfo.label} {roleInfo.badge ? `· ${roleInfo.badge}` : ''}
                 </span>
               </div>
             </Link>
           ) : (
-            <Link to="/asha" className="w-9 h-9 mx-auto rounded-xl bg-gradient-to-tr from-blue-700 to-teal-500 flex items-center justify-center text-white font-black shadow-md">
+            <Link to="/" className="w-9 h-9 mx-auto rounded-xl bg-gradient-to-tr from-blue-700 to-teal-500 flex items-center justify-center text-white font-black shadow-md text-sm">
               AM
             </Link>
           )}
@@ -141,19 +302,19 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           ))}
         </div>
 
-        {/* ASHA User Footer */}
+        {/* User Footer */}
         <div className="p-3 border-t border-slate-100 bg-slate-50/50">
           <div className="flex items-center space-x-3 p-2 rounded-xl">
             <div className="w-8 h-8 rounded-full font-bold flex items-center justify-center text-xs flex-shrink-0 bg-blue-100 text-blue-800">
-              RB
+              {userInitials}
             </div>
             {!isCollapsed && (
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold text-slate-800 truncate">
-                  Rekha Bai (ASHA)
+                  {user?.full_name || 'User'}
                 </p>
                 <p className="text-[10px] font-semibold text-emerald-700 uppercase">
-                  Ward 4 Sinnar
+                  {roleInfo.label}
                 </p>
               </div>
             )}
@@ -194,13 +355,64 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             </div>
           </div>
 
-          {/* Right: ASHA Badge, Scan QR, Language, Notifications */}
+          {/* Right: Role Badge, Role Switcher, Scan QR, Language, Notifications */}
           <div className="flex items-center space-x-2 sm:space-x-3">
             
-            {/* Frontline ASHA Badge (NO role switcher buttons) */}
-            <div className="hidden lg:flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-800 px-3 py-1.5 rounded-xl text-xs font-bold">
-              <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-              <span>ASHA Frontline: Ward 4</span>
+            {/* Role Badge with Switcher */}
+            <div className="relative">
+              <button
+                onClick={() => setShowRoleSwitcher(!showRoleSwitcher)}
+                className="hidden lg:flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-800 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer hover:bg-blue-100 transition"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                <span>{roleInfo.label}{roleInfo.badge ? `: ${roleInfo.badge}` : ''}</span>
+                <ChevronDown className="w-3 h-3 text-blue-500" />
+              </button>
+
+              {showRoleSwitcher && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-200 p-2 z-50">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3 py-1.5">
+                    Switch Demo Role
+                  </p>
+                  {QUICK_SWITCH_ROLES.map((r) => {
+                    const RIcon = r.icon;
+                    const isCurrentRole = user?.username === r.username || 
+                      (user?.role === 'ASHA' && r.username === 'asha') ||
+                      (user?.role === 'DOCTOR' && r.username === 'doctor') ||
+                      (user?.role === 'PATIENT' && r.username === 'patient') ||
+                      (user?.role === 'SUPERADMIN' && r.username === 'admin');
+                    return (
+                      <button
+                        key={r.username}
+                        onClick={() => handleRoleSwitch(r.username, r.password)}
+                        disabled={isCurrentRole}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                          isCurrentRole
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <RIcon className={`w-4 h-4 ${isCurrentRole ? 'text-blue-600' : 'text-slate-400'}`} />
+                        <span>{r.label}</span>
+                        {isCurrentRole && (
+                          <span className="ml-auto text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-bold">
+                            Active
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                  <div className="border-t border-slate-100 mt-1 pt-1">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-red-600 hover:bg-red-50 transition cursor-pointer"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Scan ABHA Button */}
@@ -241,7 +453,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               {showNotifications && (
                 <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 z-50 space-y-3">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                    <h4 className="font-bold text-xs text-slate-900">ASHA Ward Alerts</h4>
+                    <h4 className="font-bold text-xs text-slate-900">Alerts</h4>
                     <span className="text-[10px] text-teal-700 font-bold bg-teal-50 px-2 py-0.5 rounded-full">
                       Live
                     </span>
@@ -269,12 +481,12 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           </div>
         </main>
 
-        {/* 3. MOBILE BOTTOM NAVIGATION — ONLY ASHA */}
+        {/* 3. MOBILE BOTTOM NAVIGATION */}
         <nav
           aria-label="Mobile Bottom Navigation"
           className="md:hidden h-16 bg-white border-t border-slate-200 flex items-center justify-around px-2 z-20"
         >
-          {navGroups[0].items.map((item) => {
+          {(navGroups[0]?.items || []).slice(0, 4).map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
             return (
@@ -293,12 +505,12 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         </nav>
       </div>
 
-      {/* 4. MOBILE SLIDEOUT DRAWER — ONLY ASHA */}
+      {/* 4. MOBILE SLIDEOUT DRAWER */}
       {isMobileOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex md:hidden">
           <div className="w-72 bg-white h-full flex flex-col p-4 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <span className="font-black text-slate-900">Arogya Mitra · ASHA</span>
+              <span className="font-black text-slate-900">Arogya Mitra · {roleInfo.label}</span>
               <button onClick={() => setIsMobileOpen(false)} className="p-1.5 rounded-lg text-slate-400">
                 <X className="w-5 h-5" />
               </button>
@@ -330,6 +542,39 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                 </div>
               ))}
             </div>
+
+            {/* Mobile Role Switcher */}
+            <div className="border-t border-slate-100 pt-3 space-y-1">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 mb-1">
+                Switch Role
+              </p>
+              {QUICK_SWITCH_ROLES.map((r) => {
+                const RIcon = r.icon;
+                return (
+                  <button
+                    key={r.username}
+                    onClick={() => {
+                      setIsMobileOpen(false);
+                      handleRoleSwitch(r.username, r.password);
+                    }}
+                    className="w-full flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                  >
+                    <RIcon className="w-4 h-4 text-slate-400" />
+                    <span>{r.label}</span>
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => {
+                  setIsMobileOpen(false);
+                  handleLogout();
+                }}
+                className="w-full flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-bold text-red-600 hover:bg-red-50 transition cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sign Out</span>
+              </button>
+            </div>
           </div>
           <div className="flex-1" onClick={() => setIsMobileOpen(false)} />
         </div>
@@ -343,6 +588,14 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             alert(`Scanned ABHA QR ID: ${code}`);
           }}
           onClose={() => setShowScanner(false)}
+        />
+      )}
+
+      {/* Click outside to close role switcher */}
+      {showRoleSwitcher && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={() => setShowRoleSwitcher(false)} 
         />
       )}
     </div>

@@ -97,25 +97,24 @@ const DEFAULT_ASHA_USER: UserProfile = {
   designation: 'Frontline Village Health Worker',
 };
 
-const getInitialUser = (): UserProfile => {
+const getInitialUser = (): UserProfile | null => {
   try {
     const saved = localStorage.getItem('arogya_user');
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (parsed && parsed.role === 'ASHA') return parsed;
+      if (parsed && parsed.id && parsed.role) return parsed;
     }
   } catch (e) {}
-  // Default exclusively to ASHA worker
-  localStorage.setItem('arogya_user', JSON.stringify(DEFAULT_ASHA_USER));
-  localStorage.setItem('arogya_access_token', 'mock-token-asha-default');
-  return DEFAULT_ASHA_USER;
+  return null;
 };
+
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: getInitialUser(),
-  accessToken: localStorage.getItem('arogya_access_token') || 'mock-token-asha-default',
-  isAuthenticated: true,
+  accessToken: localStorage.getItem('arogya_access_token') || null,
+  isAuthenticated: !!getInitialUser(),
   isLoading: false,
+
 
   login: async (username: string, password: string) => {
     set({ isLoading: true });

@@ -34,7 +34,26 @@ const queryClient = new QueryClient({
 });
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated } = useAuthStore();
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
   return <AppShell>{children}</AppShell>;
+};
+
+/** Redirect / to the correct dashboard based on user role */
+const RoleBasedRedirect: React.FC = () => {
+  const { user, isAuthenticated } = useAuthStore();
+  if (!isAuthenticated || !user) return <Navigate to="/login" replace />;
+  switch (user.role) {
+    case 'PATIENT': return <Navigate to="/patient" replace />;
+    case 'DOCTOR': return <Navigate to="/doctor" replace />;
+    case 'ASHA':
+    case 'CHO':
+    case 'ANM': return <Navigate to="/asha" replace />;
+    case 'SUPERADMIN': return <Navigate to="/dashboard" replace />;
+    default: return <Navigate to="/dashboard" replace />;
+  }
 };
 
 export const App: React.FC = () => {
@@ -48,8 +67,14 @@ export const App: React.FC = () => {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          {/* Main ASHA Portal Views */}
-          <Route path="/" element={<Navigate to="/asha" replace />} />
+          {/* Root — redirect based on role */}
+          <Route path="/" element={<RoleBasedRedirect />} />
+
+          {/* Auth Routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<LoginPage defaultMode="signup" />} />
+
+          {/* Role-Specific Dashboards */}
           <Route
             path="/asha"
             element={
@@ -58,6 +83,40 @@ export const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/doctor"
+            element={
+              <ProtectedRoute>
+                <DoctorDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/patient"
+            element={
+              <ProtectedRoute>
+                <PatientDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Shared Clinical & Operations Pages */}
           <Route
             path="/patients"
             element={
@@ -106,23 +165,57 @@ export const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/appointments"
+            element={
+              <ProtectedRoute>
+                <AppointmentsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pharmacy"
+            element={
+              <ProtectedRoute>
+                <PharmacyPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/lab"
+            element={
+              <ProtectedRoute>
+                <LaboratoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/referrals"
+            element={
+              <ProtectedRoute>
+                <ReferralsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <ProtectedRoute>
+                <AnalyticsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/facilities"
+            element={
+              <ProtectedRoute>
+                <FacilitiesPage />
+              </ProtectedRoute>
+            }
+          />
 
-          {/* Redirect all legacy, admin, doctor & other endpoints to /asha */}
-          <Route path="/dashboard" element={<Navigate to="/asha" replace />} />
-          <Route path="/admin" element={<Navigate to="/asha" replace />} />
-          <Route path="/doctor" element={<Navigate to="/asha" replace />} />
-          <Route path="/patient" element={<Navigate to="/asha" replace />} />
-          <Route path="/analytics" element={<Navigate to="/asha" replace />} />
-          <Route path="/facilities" element={<Navigate to="/asha" replace />} />
-          <Route path="/pharmacy" element={<Navigate to="/asha" replace />} />
-          <Route path="/referrals" element={<Navigate to="/asha" replace />} />
-          <Route path="/lab" element={<Navigate to="/asha" replace />} />
-          <Route path="/appointments" element={<Navigate to="/asha" replace />} />
-          <Route path="/login" element={<Navigate to="/asha" replace />} />
-          <Route path="/signup" element={<Navigate to="/asha" replace />} />
-
-          {/* Catch-all redirect to /asha */}
-          <Route path="*" element={<Navigate to="/asha" replace />} />
+          {/* Catch-all — redirect to login */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
@@ -130,3 +223,4 @@ export const App: React.FC = () => {
 };
 
 export default App;
+
