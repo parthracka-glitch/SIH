@@ -25,8 +25,10 @@ import {
   Sparkles,
   Pill,
   CheckCircle2,
-  X
+  X,
+  FlaskConical
 } from 'lucide-react';
+import { PatientLabReportsModal } from '../components/PatientLabReportsModal';
 
 interface PatientRecord {
   id: string;
@@ -306,6 +308,8 @@ export const PatientsPage: React.FC = () => {
   const [riskFilter, setRiskFilter] = useState<string>('ALL');
   const [villageFilter, setVillageFilter] = useState<string>('ALL');
   const [selectedPatient, setSelectedPatient] = useState<PatientRecord | null>(null);
+  const [selectedLabPatient, setSelectedLabPatient] = useState<PatientRecord | null>(null);
+  const [isLabModalOpen, setIsLabModalOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
 
   // New Patient Form State
@@ -601,16 +605,31 @@ export const PatientsPage: React.FC = () => {
 
                     {/* Actions */}
                     <td className="py-3 px-3.5 text-right whitespace-nowrap">
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          setSelectedPatient(pat);
-                        }}
-                        className="bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 px-2.5 py-1 rounded-md text-[11px] font-semibold border border-slate-200/80 transition inline-flex items-center space-x-1 cursor-pointer"
-                      >
-                        <Eye className="w-3 h-3" />
-                        <span>View EHR</span>
-                      </button>
+                      <div className="flex items-center justify-end space-x-1.5">
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            setSelectedLabPatient(pat);
+                            setIsLabModalOpen(true);
+                          }}
+                          className="bg-teal-50 hover:bg-teal-100 text-teal-700 px-2.5 py-1 rounded-md text-[11px] font-semibold border border-teal-200 transition inline-flex items-center space-x-1 cursor-pointer shadow-xs"
+                          title="View Diagnostic Lab Reports"
+                        >
+                          <FlaskConical className="w-3 h-3 text-teal-600" />
+                          <span>Lab Reports</span>
+                        </button>
+
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            setSelectedPatient(pat);
+                          }}
+                          className="bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 px-2.5 py-1 rounded-md text-[11px] font-semibold border border-slate-200/80 transition inline-flex items-center space-x-1 cursor-pointer"
+                        >
+                          <Eye className="w-3 h-3" />
+                          <span>View EHR</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -772,6 +791,17 @@ export const PatientsPage: React.FC = () => {
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => {
+                      setSelectedLabPatient(selectedPatient);
+                      setIsLabModalOpen(true);
+                    }}
+                    className="bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 cursor-pointer transition shadow-xs"
+                  >
+                    <FlaskConical className="w-3.5 h-3.5 text-teal-600" />
+                    <span>Diagnostic Lab Reports</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
                       setSelectedPatient(null);
                       navigate('/teleconsult');
                     }}
@@ -926,6 +956,13 @@ export const PatientsPage: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Reusable Patient Lab Reports Modal */}
+      <PatientLabReportsModal
+        isOpen={isLabModalOpen}
+        onClose={() => setIsLabModalOpen(false)}
+        patient={selectedLabPatient}
+        allowOrderTests={true}
+      />
     </div>
   );
 };

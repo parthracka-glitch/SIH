@@ -29,15 +29,23 @@ interface ChatMessage {
 }
 
 export const AIAgentChatbot: React.FC = () => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: "welcome-1",
-      sender: "agent",
-      text: "Namaste! I am Arogya Mitra AI Clinical Assistant. You can tell me your symptoms in Hindi, English or Marathi. (नमस्ते! आप अपने लक्षण या बीमारी के बारे में बता सकते हैं। आपको तुरंत घरेलू नुस्खे और प्राथमिक सलाह मिलेगी।)"
-    }
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    const isMr = i18n.language === "mr";
+    const isHi = i18n.language === "hi";
+    return [
+      {
+        id: "welcome-1",
+        sender: "agent",
+        text: isMr
+          ? "नमस्कार! मी आरोग्य मित्र एआय क्लिनिकल सहाय्यक आहे. आपण आपली लक्षणे मराठी, हिंदी किंवा इंग्रजीत सांगू शकता. आपल्याला त्वरित प्राथमिक मार्गदर्शन व घरगुती उपाय मिळतील."
+          : isHi
+          ? "नमस्ते! मैं आरोग्य मित्र एआई क्लीनिकल सहायक हूँ। आप अपने लक्षण हिंदी, अंग्रेजी या मराठी में बता सकते हैं। आपको तुरंत प्राथमिक सलाह और उपचार सुझाव मिलेंगे।"
+          : "Namaste! I am Arogya Mitra AI Clinical Assistant. You can describe your symptoms in English, Hindi, or Marathi for instant triage and home remedy guidance."
+      }
+    ];
+  });
   const [input, setInput] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [voiceOn, setVoiceOn] = useState(true);
@@ -60,6 +68,37 @@ export const AIAgentChatbot: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Sync quick suggestions when language changes
+  useEffect(() => {
+    const isMr = i18n.language === "mr";
+    const isHi = i18n.language === "hi";
+    if (isMr) {
+      setQuickOptions([
+        "मला ताप आला आहे",
+        "जुलाब आणि पोट बिघडले आहे",
+        "खोकला आणि सर्दी आहे",
+        "अ‍ॅसिडिटी आणि जळजळ",
+        "डोके खूप दुखत आहे"
+      ]);
+    } else if (isHi) {
+      setQuickOptions([
+        "मुझे बुखार है",
+        "दस्त और पेट खराब है",
+        "खांसी और जुकाम है",
+        "एसिडिटी व गैस है",
+        "सिर में बहुत दर्द है"
+      ]);
+    } else {
+      setQuickOptions([
+        "I have fever",
+        "Loose motions / diarrhea",
+        "Cough and cold",
+        "Acidity and gas",
+        "Severe headache"
+      ]);
+    }
+  }, [i18n.language]);
 
   // Global trigger listener & Escape key listener
   useEffect(() => {
@@ -328,7 +367,11 @@ export const AIAgentChatbot: React.FC = () => {
                         <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2">
                           <div>
                             <span className="font-extrabold text-sm text-slate-900 block leading-tight">
-                              {m.triage.conditionHindi || m.triage.suspectedCondition}
+                              {i18n.language === "mr"
+                                ? (m.triage.conditionMarathi || m.triage.conditionHindi || m.triage.suspectedCondition)
+                                : i18n.language === "hi"
+                                ? (m.triage.conditionHindi || m.triage.suspectedCondition)
+                                : m.triage.suspectedCondition}
                             </span>
                             <span className="text-[10px] text-slate-400 font-medium">
                               {m.triage.suspectedCondition}
@@ -350,18 +393,37 @@ export const AIAgentChatbot: React.FC = () => {
 
                         {/* Explanation */}
                         <p className="text-slate-700 leading-relaxed font-normal">
-                          {m.triage.explanationHindi || m.triage.explanationEnglish}
+                          {i18n.language === "mr"
+                            ? (m.triage.explanationMarathi || m.triage.explanationHindi || m.triage.explanationEnglish)
+                            : i18n.language === "hi"
+                            ? (m.triage.explanationHindi || m.triage.explanationEnglish)
+                            : m.triage.explanationEnglish}
                         </p>
 
-                        {/* Home Remedies Section (घरेलू नुस्खे) */}
-                        {m.triage.homeRemediesHindi && m.triage.homeRemediesHindi.length > 0 && (
+                        {/* Home Remedies Section */}
+                        {((i18n.language === "mr" && m.triage.homeRemediesMarathi && m.triage.homeRemediesMarathi.length > 0) ||
+                          (m.triage.homeRemediesHindi && m.triage.homeRemediesHindi.length > 0) ||
+                          (m.triage.homeRemediesEnglish && m.triage.homeRemediesEnglish.length > 0)) && (
                           <div className="bg-emerald-50/80 border border-emerald-200 rounded-xl p-2.5 space-y-1.5">
                             <div className="flex items-center space-x-1.5 text-emerald-800 font-bold text-xs">
                               <span className="text-sm">🌿</span>
-                              <span>घरेलू उपाय / Home Remedies:</span>
+                              <span>
+                                {i18n.language === "mr"
+                                  ? "घरगुती उपाय / Primary Care:"
+                                  : i18n.language === "hi"
+                                  ? "घरेलू उपाय / Home Remedies:"
+                                  : "Home Remedies & Primary Care:"}
+                              </span>
                             </div>
                             <ul className="space-y-1 pl-1">
-                              {m.triage.homeRemediesHindi.map((remedy, idx) => (
+                              {(i18n.language === "mr" && m.triage.homeRemediesMarathi?.length
+                                ? m.triage.homeRemediesMarathi
+                                : i18n.language === "hi" && m.triage.homeRemediesHindi?.length
+                                ? m.triage.homeRemediesHindi
+                                : m.triage.homeRemediesEnglish?.length
+                                ? m.triage.homeRemediesEnglish
+                                : m.triage.homeRemediesHindi || []
+                              ).map((remedy, idx) => (
                                 <li key={idx} className="text-emerald-950 text-[11px] leading-relaxed flex items-start space-x-1.5">
                                   <span className="text-emerald-600 font-bold mt-0.5">•</span>
                                   <span>{remedy}</span>
@@ -376,7 +438,13 @@ export const AIAgentChatbot: React.FC = () => {
                           <div className="bg-blue-50/80 border border-blue-200 rounded-xl p-2.5 space-y-1">
                             <div className="flex items-center space-x-1.5 text-blue-900 font-bold text-[11px]">
                               <span>💊</span>
-                              <span>प्राथमिक सलाह / Safe First Aid:</span>
+                              <span>
+                                {i18n.language === "mr"
+                                  ? "प्राथमिक प्रथमोपचार सल्ला:"
+                                  : i18n.language === "hi"
+                                  ? "प्राथमिक सलाह / Safe First Aid:"
+                                  : "Safe First Aid & OTC Guidance:"}
+                              </span>
                             </div>
                             <ul className="space-y-1 pl-1">
                               {m.triage.safeFirstAid.map((aid, idx) => (
@@ -394,7 +462,13 @@ export const AIAgentChatbot: React.FC = () => {
                           <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-2 text-[11px] text-amber-900 space-y-1">
                             <div className="font-bold flex items-center space-x-1">
                               <span>⚠️</span>
-                              <span>चेतावनी (डॉक्टर को कब दिखाएं):</span>
+                              <span>
+                                {i18n.language === "mr"
+                                  ? "धोक्याची चिन्हे (रुग्णालयात कधी जावे):"
+                                  : i18n.language === "hi"
+                                  ? "चेतावनी (डॉक्टर को कब दिखाएं):"
+                                  : "Red Flags (When to see a Doctor):"}
+                              </span>
                             </div>
                             <ul className="list-disc pl-4 space-y-0.5 text-[10px] text-amber-800">
                               {m.triage.redFlags.map((flag, idx) => (
@@ -417,7 +491,7 @@ export const AIAgentChatbot: React.FC = () => {
           {/* Quick Reply Chips */}
           <div className="px-3 py-2 bg-slate-100/90 border-t border-slate-200 overflow-x-auto flex items-center space-x-2 no-scrollbar">
             <span className="text-[10px] font-bold text-slate-400 uppercase shrink-0">
-              सुझाव:
+              {i18n.language === "mr" ? "सुझाव:" : i18n.language === "hi" ? "सुझाव:" : "Suggestions:"}
             </span>
             {quickOptions.map((opt, i) => (
               <button
@@ -440,7 +514,7 @@ export const AIAgentChatbot: React.FC = () => {
                   : "bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-600"
               }`}
               aria-label={isListening ? "Stop listening" : "Speak in Hindi/English"}
-              title="Speak in Hindi/English (माइक से बोलें)"
+              title={i18n.language === "mr" ? "माईकवर बोला" : i18n.language === "hi" ? "माइक से बोलें" : "Speak into mic"}
             >
               {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
             </button>
@@ -450,7 +524,13 @@ export const AIAgentChatbot: React.FC = () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder="लक्षण बताएं (e.g. बुखार, दस्त, खांसी, सिर दर्द)..."
+              placeholder={
+                i18n.language === "mr"
+                  ? "आपली लक्षणे सांगा (उदा. मला २ दिवसांपासून ताप आहे)..."
+                  : i18n.language === "hi"
+                  ? "लक्षण बताएं (उदा. बुखार, दस्त, खांसी, सिर दर्द)..."
+                  : "Describe symptoms (e.g. fever, diarrhea, cough)..."
+              }
               className="flex-1 bg-slate-100 rounded-full px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 border border-transparent transition"
             />
 

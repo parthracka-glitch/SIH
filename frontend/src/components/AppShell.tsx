@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -50,25 +50,26 @@ interface NavGroup {
 }
 
 /** Role-based navigation configuration */
-const getNavGroups = (role?: string): NavGroup[] => {
+const getNavGroups = (role?: string, t?: any): NavGroup[] => {
+  const tr = (k: string, d?: string) => (t ? t(k, d) : d || k);
   switch (role) {
     case 'ASHA':
     case 'CHO':
     case 'ANM':
       return [
         {
-          group: "FIELD OPERATIONS",
+          group: tr("sidebar.field_operations", "FIELD OPERATIONS"),
           items: [
-            { name: "ASHA Field Station", icon: LayoutDashboard, path: "/asha" },
-            { name: "Village Households", icon: Users, path: "/patients" },
-            { name: "High-Risk Maternal & NCD", icon: Activity, path: "/ncd-tracking" },
+            { name: tr("sidebar.asha_field_station", "ASHA Field Station"), icon: LayoutDashboard, path: "/asha" },
+            { name: tr("sidebar.village_households", "Village Households"), icon: Users, path: "/patients" },
+            { name: tr("sidebar.high_risk_maternal_ncd", "High-Risk Maternal & NCD"), icon: Activity, path: "/ncd-tracking" },
           ],
         },
         {
-          group: "CLINICAL & EMERGENCY",
+          group: tr("sidebar.clinical_emergency", "CLINICAL & EMERGENCY"),
           items: [
-            { name: "108 Emergency Dispatch", icon: Siren, path: "/emergency-dispatch" },
-            { name: "Child Immunization & UIP", icon: PlusCircle, path: "/immunization" },
+            { name: tr("sidebar.emergency_dispatch", "108 Emergency Dispatch"), icon: Siren, path: "/emergency-dispatch" },
+            { name: tr("sidebar.child_immunization", "Child Immunization & UIP"), icon: PlusCircle, path: "/immunization" },
           ],
         },
       ];
@@ -76,27 +77,20 @@ const getNavGroups = (role?: string): NavGroup[] => {
     case 'DOCTOR':
       return [
         {
-          group: "CLINICAL",
+          group: tr("sidebar.clinical", "CLINICAL"),
           items: [
-            { name: "Dashboard", icon: LayoutDashboard, path: "/doctor" },
-            { name: "Patients", icon: Users, path: "/patients" },
-            { name: "Appointments", icon: Calendar, path: "/appointments" },
-            { name: "Teleconsultation", icon: Video, path: "/teleconsult" },
+            { name: tr("sidebar.dashboard", "Dashboard"), icon: LayoutDashboard, path: "/doctor" },
+            { name: tr("sidebar.patients", "Patients"), icon: Users, path: "/patients" },
+            { name: tr("sidebar.appointments", "Appointments"), icon: Calendar, path: "/appointments" },
+            { name: tr("sidebar.teleconsultation", "Teleconsultation"), icon: Video, path: "/teleconsult" },
+            { name: tr("sidebar.referrals", "Referrals"), icon: FileText, path: "/referrals" },
           ],
         },
         {
-          group: "DIAGNOSTICS",
+          group: tr("sidebar.emergency", "EMERGENCY"),
           items: [
-            { name: "Laboratory", icon: FlaskConical, path: "/lab" },
-            { name: "Pharmacy", icon: Pill, path: "/pharmacy" },
-            { name: "Referrals", icon: FileText, path: "/referrals" },
-          ],
-        },
-        {
-          group: "EMERGENCY",
-          items: [
-            { name: "108 Emergency Dispatch", icon: Siren, path: "/emergency-dispatch" },
-            { name: "Maternal & NCD Tracking", icon: Activity, path: "/ncd-tracking" },
+            { name: tr("sidebar.emergency_dispatch", "108 Emergency Dispatch"), icon: Siren, path: "/emergency-dispatch" },
+            { name: tr("sidebar.maternal_ncd", "Maternal & NCD Tracking"), icon: Activity, path: "/ncd-tracking" },
           ],
         },
       ];
@@ -104,31 +98,31 @@ const getNavGroups = (role?: string): NavGroup[] => {
     case 'SUPERADMIN':
       return [
         {
-          group: "ADMINISTRATION",
+          group: tr("sidebar.administration", "ADMINISTRATION"),
           items: [
-            { name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
-            { name: "Admin Panel", icon: Settings, path: "/admin" },
-            { name: "Analytics", icon: BarChart3, path: "/analytics" },
-            { name: "Facilities", icon: Building2, path: "/facilities" },
+            { name: tr("sidebar.dashboard", "Dashboard"), icon: LayoutDashboard, path: "/dashboard" },
+            { name: tr("sidebar.admin_panel", "Admin Panel"), icon: Settings, path: "/admin" },
+            { name: tr("sidebar.analytics", "Analytics"), icon: BarChart3, path: "/analytics" },
+            { name: tr("sidebar.facilities", "Facilities"), icon: Building2, path: "/facilities" },
           ],
         },
         {
-          group: "OPERATIONS",
+          group: tr("sidebar.operations", "OPERATIONS"),
           items: [
-            { name: "Patients", icon: Users, path: "/patients" },
-            { name: "Appointments", icon: Calendar, path: "/appointments" },
-            { name: "Pharmacy", icon: Pill, path: "/pharmacy" },
-            { name: "Laboratory", icon: FlaskConical, path: "/lab" },
-            { name: "Referrals", icon: FileText, path: "/referrals" },
+            { name: tr("sidebar.patients", "Patients"), icon: Users, path: "/patients" },
+            { name: tr("sidebar.appointments", "Appointments"), icon: Calendar, path: "/appointments" },
+            { name: tr("sidebar.pharmacy", "Pharmacy"), icon: Pill, path: "/pharmacy" },
+            { name: tr("sidebar.laboratory", "Laboratory"), icon: FlaskConical, path: "/lab" },
+            { name: tr("sidebar.referrals", "Referrals"), icon: FileText, path: "/referrals" },
           ],
         },
         {
-          group: "CLINICAL",
+          group: tr("sidebar.clinical", "CLINICAL"),
           items: [
-            { name: "Teleconsultation", icon: Video, path: "/teleconsult" },
-            { name: "Emergency Dispatch", icon: Siren, path: "/emergency-dispatch" },
-            { name: "Immunization", icon: PlusCircle, path: "/immunization" },
-            { name: "Maternal & NCD", icon: Activity, path: "/ncd-tracking" },
+            { name: tr("sidebar.teleconsultation", "Teleconsultation"), icon: Video, path: "/teleconsult" },
+            { name: tr("sidebar.emergency_dispatch", "Emergency Dispatch"), icon: Siren, path: "/emergency-dispatch" },
+            { name: tr("sidebar.child_immunization", "Immunization"), icon: PlusCircle, path: "/immunization" },
+            { name: tr("sidebar.maternal_ncd", "Maternal & NCD"), icon: Activity, path: "/ncd-tracking" },
           ],
         },
       ];
@@ -136,12 +130,12 @@ const getNavGroups = (role?: string): NavGroup[] => {
     case 'PATIENT':
       return [
         {
-          group: "MY HEALTH",
+          group: tr("sidebar.my_health", "MY HEALTH"),
           items: [
-            { name: "My Dashboard", icon: LayoutDashboard, path: "/patient" },
-            { name: "Health Card", icon: CreditCard, path: "/health-card" },
-            { name: "Appointments", icon: Calendar, path: "/appointments" },
-            { name: "Teleconsult", icon: Video, path: "/teleconsult" },
+            { name: tr("sidebar.my_dashboard", "My Dashboard"), icon: LayoutDashboard, path: "/patient" },
+            { name: tr("sidebar.health_card", "Health Card"), icon: CreditCard, path: "/health-card" },
+            { name: tr("sidebar.appointments", "Appointments"), icon: Calendar, path: "/appointments" },
+            { name: tr("sidebar.teleconsult", "Teleconsult"), icon: Video, path: "/teleconsult" },
           ],
         },
       ];
@@ -149,10 +143,10 @@ const getNavGroups = (role?: string): NavGroup[] => {
     default:
       return [
         {
-          group: "NAVIGATION",
+          group: tr("sidebar.navigation", "NAVIGATION"),
           items: [
-            { name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
-            { name: "Patients", icon: Users, path: "/patients" },
+            { name: tr("sidebar.dashboard", "Dashboard"), icon: LayoutDashboard, path: "/dashboard" },
+            { name: tr("sidebar.patients", "Patients"), icon: Users, path: "/patients" },
           ],
         },
       ];
@@ -160,28 +154,21 @@ const getNavGroups = (role?: string): NavGroup[] => {
 };
 
 /** Get role display info */
-const getRoleInfo = (role?: string) => {
+const getRoleInfo = (role?: string, t?: any) => {
+  const tr = (k: string, d?: string) => (t ? t(k, d) : d || k);
   switch (role) {
-    case 'ASHA': return { label: 'ASHA Frontline', color: 'blue', badge: 'Ward 4' };
-    case 'CHO': return { label: 'Community Health Officer', color: 'teal', badge: 'PHC' };
-    case 'ANM': return { label: 'Auxiliary Nurse Midwife', color: 'purple', badge: 'SC' };
-    case 'DOCTOR': return { label: 'Doctor', color: 'emerald', badge: 'OPD' };
-    case 'SUPERADMIN': return { label: 'Administrator', color: 'amber', badge: 'Admin' };
-    case 'PATIENT': return { label: 'Patient', color: 'sky', badge: 'ABHA' };
-    default: return { label: role || 'User', color: 'slate', badge: '' };
+    case 'ASHA': return { label: tr('shell.role_asha', 'ASHA Frontline'), color: 'blue', badge: 'Ward 4' };
+    case 'CHO': return { label: tr('shell.role_cho', 'Community Health Officer'), color: 'teal', badge: 'PHC' };
+    case 'ANM': return { label: tr('shell.role_anm', 'Auxiliary Nurse Midwife'), color: 'purple', badge: 'SC' };
+    case 'DOCTOR': return { label: tr('shell.role_doctor', 'Doctor'), color: 'emerald', badge: 'OPD' };
+    case 'SUPERADMIN': return { label: tr('shell.role_admin', 'Hospital Admin'), color: 'amber', badge: 'Admin' };
+    case 'PATIENT': return { label: tr('shell.role_patient', 'Patient'), color: 'sky', badge: 'ABHA' };
+    default: return { label: role || tr('shell.role_user', 'User'), color: 'slate', badge: '' };
   }
 };
 
-/** Quick-switch demo accounts */
-const QUICK_SWITCH_ROLES = [
-  { label: 'ASHA Worker', username: 'asha', password: 'asha123', icon: ShieldCheck, color: 'blue' },
-  { label: 'Doctor', username: 'doctor', password: 'doctor123', icon: Stethoscope, color: 'emerald' },
-  { label: 'Patient', username: 'patient', password: 'patient123', icon: UserCircle, color: 'sky' },
-  { label: 'Admin', username: 'admin', password: 'admin123', icon: Settings, color: 'amber' },
-];
-
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, login } = useAuthStore();
@@ -189,11 +176,30 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [language, setLanguage] = useState<"en" | "hi" | "mr">(() => {
-    return (localStorage.getItem("arogya_lang") as "en" | "hi" | "mr") || "en";
+    return ((i18n.language || localStorage.getItem("arogya_lang")) as "en" | "hi" | "mr") || "en";
   });
+
+  useEffect(() => {
+    const onLangChanged = (lng: string) => {
+      if (lng === "en" || lng === "hi" || lng === "mr") {
+        setLanguage(lng);
+      }
+    };
+    i18n.on("languageChanged", onLangChanged);
+    return () => {
+      i18n.off("languageChanged", onLangChanged);
+    };
+  }, [i18n]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
+
+  const quickSwitchRoles = [
+    { label: t('shell.asha_worker', 'ASHA Worker'), username: 'asha', password: 'asha123', icon: ShieldCheck, color: 'blue' },
+    { label: t('shell.doctor', 'Doctor'), username: 'doctor', password: 'doctor123', icon: Stethoscope, color: 'emerald' },
+    { label: t('shell.patient', 'Patient'), username: 'patient', password: 'patient123', icon: UserCircle, color: 'sky' },
+    { label: t('shell.admin', 'Hospital Admin'), username: 'admin', password: 'admin123', icon: Settings, color: 'amber' },
+  ];
 
   const handleLanguageChange = (lang: "en" | "hi" | "mr") => {
     setLanguage(lang);
@@ -224,8 +230,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     }
   };
 
-  const navGroups = getNavGroups(user?.role);
-  const roleInfo = getRoleInfo(user?.role);
+  const navGroups = getNavGroups(user?.role, t);
+  const roleInfo = getRoleInfo(user?.role, t);
   const userInitials = user?.full_name
     ? user.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
     : 'U';
@@ -321,7 +327,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             <button
               onClick={handleLogout}
               className="p-1 text-slate-400 hover:text-red-600 rounded transition cursor-pointer"
-              title="Sign Out"
+              title={t('shell.sign_out', 'Sign Out')}
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -349,7 +355,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search village households, patient name, or ABHA..."
+                placeholder={t('shell.search_placeholder', 'Search village households, patient name, or ABHA...')}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 outline-none transition"
               />
             </div>
@@ -372,9 +378,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               {showRoleSwitcher && (
                 <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-200 p-2 z-50">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3 py-1.5">
-                    Switch Demo Role
+                    {t('shell.switch_role', 'Switch Demo Role')}
                   </p>
-                  {QUICK_SWITCH_ROLES.map((r) => {
+                  {quickSwitchRoles.map((r) => {
                     const RIcon = r.icon;
                     const isCurrentRole = user?.username === r.username || 
                       (user?.role === 'ASHA' && r.username === 'asha') ||
@@ -396,7 +402,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                         <span>{r.label}</span>
                         {isCurrentRole && (
                           <span className="ml-auto text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-bold">
-                            Active
+                            {t('shell.active', 'Active')}
                           </span>
                         )}
                       </button>
@@ -408,7 +414,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-red-600 hover:bg-red-50 transition cursor-pointer"
                     >
                       <LogOut className="w-4 h-4" />
-                      <span>Sign Out</span>
+                      <span>{t('shell.sign_out', 'Sign Out')}</span>
                     </button>
                   </div>
                 </div>
@@ -421,7 +427,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               className="flex items-center space-x-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 transition cursor-pointer"
             >
               <QrCode className="w-3.5 h-3.5 text-blue-600" />
-              <span className="hidden sm:inline">Scan ABHA</span>
+              <span className="hidden sm:inline">{t('shell.scan_abha', 'Scan ABHA')}</span>
             </button>
 
             {/* Language Selector */}
@@ -453,19 +459,19 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               {showNotifications && (
                 <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 z-50 space-y-3">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                    <h4 className="font-bold text-xs text-slate-900">Alerts</h4>
+                    <h4 className="font-bold text-xs text-slate-900">{t('shell.alerts', 'Alerts')}</h4>
                     <span className="text-[10px] text-teal-700 font-bold bg-teal-50 px-2 py-0.5 rounded-full">
-                      Live
+                      {t('shell.live', 'Live')}
                     </span>
                   </div>
                   <div className="space-y-2 text-xs">
                     <div className="p-2.5 rounded-xl bg-red-50 border border-red-100 text-red-900">
-                      <p className="font-bold text-[11px]">Emergency Ambulance 108</p>
-                      <p className="text-[10px] text-red-700 mt-0.5">Dispatched to Sinnar Ward 4 for Sita Devi.</p>
+                      <p className="font-bold text-[11px]">{t('shell.alert_emergency_title', 'Emergency Ambulance 108')}</p>
+                      <p className="text-[10px] text-red-700 mt-0.5">{t('shell.alert_emergency_desc', 'Dispatched to Sinnar Ward 4 for Sita Devi.')}</p>
                     </div>
                     <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-100 text-blue-900">
-                      <p className="font-bold text-[11px]">ANC Checkup Due</p>
-                      <p className="text-[10px] text-blue-700 mt-0.5">Kavita Shinde BP follow-up scheduled today.</p>
+                      <p className="font-bold text-[11px]">{t('shell.alert_anc_title', 'ANC Checkup Due')}</p>
+                      <p className="text-[10px] text-blue-700 mt-0.5">{t('shell.alert_anc_desc', 'Kavita Shinde BP follow-up scheduled today.')}</p>
                     </div>
                   </div>
                 </div>
@@ -546,9 +552,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             {/* Mobile Role Switcher */}
             <div className="border-t border-slate-100 pt-3 space-y-1">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 mb-1">
-                Switch Role
+                {t('shell.switch_role', 'Switch Demo Role')}
               </p>
-              {QUICK_SWITCH_ROLES.map((r) => {
+              {quickSwitchRoles.map((r) => {
                 const RIcon = r.icon;
                 return (
                   <button
@@ -572,7 +578,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                 className="w-full flex items-center space-x-3 px-3 py-2 rounded-xl text-xs font-bold text-red-600 hover:bg-red-50 transition cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
-                <span>Sign Out</span>
+                <span>{t('shell.sign_out', 'Sign Out')}</span>
               </button>
             </div>
           </div>

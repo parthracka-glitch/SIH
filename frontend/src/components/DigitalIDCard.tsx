@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { QRCodeSVG } from "qrcode.react";
 import { ShieldCheck, Lock } from "lucide-react";
 
@@ -14,6 +15,14 @@ export interface DigitalIDCardProps {
 }
 
 export const DigitalIDCard: React.FC<DigitalIDCardProps> = ({ user }) => {
+  const { t } = useTranslation();
+
+  const genderLabel = user.gender?.toLowerCase().startsWith("m")
+    ? t("health_card.male", "Male")
+    : user.gender?.toLowerCase().startsWith("f")
+    ? t("health_card.female", "Female")
+    : user.gender;
+
   return (
     <div className="bg-white w-full rounded-2xl overflow-hidden border border-slate-200 shadow-xs transition hover:shadow-md">
       {/* Subtle National Tricolor Accent Bar */}
@@ -27,13 +36,17 @@ export const DigitalIDCard: React.FC<DigitalIDCardProps> = ({ user }) => {
               🇮🇳
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-xs tracking-tight">Ayushman Bharat Health Account</h3>
-              <p className="text-[9px] text-slate-400 font-medium">National Health Authority</p>
+              <h3 className="font-bold text-slate-900 text-xs tracking-tight">
+                {t("health_card.abha_account", "Ayushman Bharat Health Account (ABHA)")}
+              </h3>
+              <p className="text-[9px] text-slate-400 font-medium">
+                {t("health_card.nha_title", "National Health Authority • Govt. of India")}
+              </p>
             </div>
           </div>
           <span className="inline-flex items-center text-[9px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
             <ShieldCheck className="w-2.5 h-2.5 mr-0.5 text-emerald-600" />
-            Verified
+            {t("health_card.abdm_verified", "Verified")}
           </span>
         </div>
 
@@ -42,7 +55,7 @@ export const DigitalIDCard: React.FC<DigitalIDCardProps> = ({ user }) => {
           <div className="space-y-1">
             <p className="text-sm font-bold text-slate-900 leading-tight">{user.name}</p>
             <p className="text-[11px] text-slate-500">
-              {user.gender} • {user.age} yrs • {user.village}
+              {genderLabel} • {user.age} {t("health_card.dob", "yrs")} • {user.village}
             </p>
             <div className="pt-1">
               <span className="font-mono text-xs font-bold text-slate-800 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">
@@ -58,10 +71,10 @@ export const DigitalIDCard: React.FC<DigitalIDCardProps> = ({ user }) => {
 
         {/* Footer */}
         <div className="border-t border-slate-100 pt-2 flex justify-between items-center text-[10px] text-slate-400">
-          <span>Helpline: 108 / 102</span>
+          <span>{t("citizen.emergency_108", "Helpline: 108 / 102")}</span>
           <span className="inline-flex items-center font-mono text-[9px]">
             <Lock className="w-2.5 h-2.5 mr-0.5 text-emerald-500" />
-            ABDM SECURED
+            {t("health_card.iso_secured", "ABDM SECURED")}
           </span>
         </div>
       </div>

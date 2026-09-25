@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Users,
   RefreshCw,
@@ -25,7 +26,9 @@ import {
   FileText,
   AlertCircle,
   Zap,
+  Globe,
 } from "lucide-react";
+import { changeLanguage } from "../lib/i18n";
 import { QRScanner } from "../components/QRScanner";
 import { VoiceIntakeModal } from "../components/voice/VoiceIntakeModal";
 import { SosEmergencyModal } from "../components/SosEmergencyModal";
@@ -320,12 +323,13 @@ const INITIAL_PATIENTS: PatientData[] = [
 /* ──────────────────────── Helper UI Components ──────────────────────── */
 
 const CategoryBadge: React.FC<{ category: PatientData["category"] }> = ({ category }) => {
+  const { t } = useTranslation();
   const config: Record<string, { bg: string; text: string; label: string }> = {
-    HIGH_RISK: { bg: "bg-red-50 border-red-200", text: "text-red-700", label: "High Risk" },
-    ANC: { bg: "bg-violet-50 border-violet-200", text: "text-violet-700", label: "Maternal ANC" },
-    NCD: { bg: "bg-amber-50 border-amber-200", text: "text-amber-700", label: "NCD Chronic" },
-    INFANT: { bg: "bg-sky-50 border-sky-200", text: "text-sky-700", label: "Child Health" },
-    ROUTINE: { bg: "bg-slate-50 border-slate-200", text: "text-slate-600", label: "Routine" },
+    HIGH_RISK: { bg: "bg-red-50 border-red-200", text: "text-red-700", label: t("asha_dashboard.filter_high_risk", "High Risk") },
+    ANC: { bg: "bg-violet-50 border-violet-200", text: "text-violet-700", label: t("asha_dashboard.filter_anc", "Maternal ANC") },
+    NCD: { bg: "bg-amber-50 border-amber-200", text: "text-amber-700", label: t("asha_dashboard.filter_ncd", "NCD Chronic") },
+    INFANT: { bg: "bg-sky-50 border-sky-200", text: "text-sky-700", label: t("asha_dashboard.filter_child", "Child Health") },
+    ROUTINE: { bg: "bg-slate-50 border-slate-200", text: "text-slate-600", label: t("asha_dashboard.filter_all", "Routine") },
   };
   const c = config[category] || config.ROUTINE;
   return (
@@ -346,9 +350,44 @@ const VitalChip: React.FC<{ label: string; value: string; alert?: boolean }> = (
   </span>
 );
 
+/* Translate demo patient medical conditions */
+const translateCondition = (cond: string, t: any) => {
+  if (cond.includes("Severe Anemia") || cond.includes("High Risk Pregnancy")) {
+    return t("asha_dashboard.cond_anemia", cond);
+  }
+  if (cond.includes("Hypertension")) {
+    return t("asha_dashboard.cond_hypertension", cond);
+  }
+  if (cond.includes("Pentavalent") || cond.includes("Vaccine Due")) {
+    return t("asha_dashboard.cond_infant", cond);
+  }
+  if (cond.includes("Geriatric") || cond.includes("Mobility")) {
+    return t("asha_dashboard.cond_geriatric", cond);
+  }
+  return cond;
+};
+
+/* Translate demo patient medical status messages */
+const translateStatus = (stat: string, t: any) => {
+  if (stat.includes("Referral Sent to PHC")) {
+    return t("asha_dashboard.status_anemia", stat);
+  }
+  if (stat.includes("Salt restriction")) {
+    return t("asha_dashboard.status_hypertension", stat);
+  }
+  if (stat.includes("Sub-Center") || stat.includes("Friday")) {
+    return t("asha_dashboard.status_infant", stat);
+  }
+  if (stat.includes("Monthly Checkup Done")) {
+    return t("asha_dashboard.status_geriatric", stat);
+  }
+  return stat;
+};
+
 /* ────────────────────────── Main Component ─────────────────────────── */
 
 export const AshaDashboard: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const [isOnline, setIsOnline] = useState(true);
   const [pendingSyncCount, setPendingSyncCount] = useState(3);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -538,11 +577,11 @@ export const AshaDashboard: React.FC = () => {
 
   /* ── Quick Tab Selector in Modal ── */
   const modalTabs = [
-    { id: "VITALS", label: "General & Vitals", icon: Stethoscope },
-    { id: "MATERNAL", label: "Maternal & ANC", icon: Baby },
-    { id: "CHILD", label: "Child Vaccine", icon: Syringe },
-    { id: "NCD", label: "NCD & Chronic", icon: Heart },
-    { id: "SUPPLIES", label: "Supplies & Referral", icon: Package },
+    { id: "VITALS", label: t("asha_dashboard.tab_vitals", "General & Vitals"), icon: Stethoscope },
+    { id: "MATERNAL", label: t("asha_dashboard.tab_maternal", "Maternal & ANC"), icon: Baby },
+    { id: "CHILD", label: t("asha_dashboard.tab_child", "Child Vaccine"), icon: Syringe },
+    { id: "NCD", label: t("asha_dashboard.tab_ncd", "NCD & Chronic"), icon: Heart },
+    { id: "SUPPLIES", label: t("asha_dashboard.tab_supplies", "Supplies & Referral"), icon: Package },
   ] as const;
 
   return (
@@ -567,9 +606,11 @@ export const AshaDashboard: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="font-bold text-slate-900 text-sm sm:text-base">Rekha Bai (ASHA)</h1>
+                <h1 className="font-bold text-slate-900 text-sm sm:text-base">
+                  {t('asha_dashboard.worker_title', 'Rekha Bai (ASHA)')}
+                </h1>
                 <span className="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                  Ward 4 Sinnar
+                  {t('asha_dashboard.ward_badge', 'Ward 4 Sinnar')}
                 </span>
               </div>
               <div className="flex items-center gap-2 mt-0.5">
@@ -579,30 +620,49 @@ export const AshaDashboard: React.FC = () => {
                 >
                   <span className={`w-2 h-2 rounded-full ${isOnline ? "bg-emerald-500" : "bg-amber-500"}`} />
                   <span className={isOnline ? "text-emerald-700" : "text-amber-700"}>
-                    {isOnline ? "Online Sync Active" : "Offline Local Mode"}
+                    {isOnline ? t('asha_dashboard.online_sync', 'Online Sync Active') : t('asha_dashboard.offline_mode', 'Offline Local Mode')}
                   </span>
                 </button>
                 <span className="text-slate-300">·</span>
-                <span className="text-xs text-slate-500">{pendingSyncCount} changes to sync</span>
+                <span className="text-xs text-slate-500">{pendingSyncCount} {t('asha_dashboard.sync_pending', 'changes to sync')}</span>
               </div>
             </div>
           </div>
 
           {/* Quick Toolbar */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-end">
+            {/* Direct Language Switcher Pill inside ASHA Station */}
+            <div className="flex items-center bg-slate-100 p-0.5 sm:p-1 rounded-xl border border-slate-200">
+              <Globe className="w-3.5 h-3.5 text-slate-500 ml-1.5 mr-1 hidden sm:inline" />
+              {(['en', 'hi', 'mr'] as const).map((lang) => (
+                <button
+                  key={lang}
+                  type="button"
+                  onClick={() => changeLanguage(lang)}
+                  className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                    (i18n.language === lang || (!i18n.language && lang === 'en'))
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                  }`}
+                >
+                  {lang === 'en' ? 'EN' : lang === 'hi' ? 'हिंदी' : 'मराठी'}
+                </button>
+              ))}
+            </div>
+
             <button
               onClick={() => setShowScanner(true)}
               className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 px-3 py-2 rounded-lg border border-slate-200 transition cursor-pointer"
             >
               <QrCode className="w-4 h-4 text-blue-600" />
-              <span>Scan ABHA</span>
+              <span>{t('asha_dashboard.scan_abha', 'Scan ABHA')}</span>
             </button>
             <button
               onClick={() => setShowVoiceIntake(true)}
               className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-violet-700 bg-violet-50 hover:bg-violet-100 px-3 py-2 rounded-lg border border-violet-200 transition cursor-pointer"
             >
               <Mic className="w-4 h-4 text-violet-600" />
-              <span>Voice</span>
+              <span>{t('asha_dashboard.voice', 'Voice')}</span>
             </button>
             <button
               onClick={handleSyncNow}
@@ -614,14 +674,14 @@ export const AshaDashboard: React.FC = () => {
               }`}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
-              <span>{isSyncing ? "Syncing…" : pendingSyncCount > 0 ? `Sync (${pendingSyncCount})` : "Synced"}</span>
+              <span>{isSyncing ? t('asha_dashboard.syncing', 'Syncing…') : pendingSyncCount > 0 ? `${t('asha_dashboard.sync_now', 'Sync')} (${pendingSyncCount})` : t('asha_dashboard.synced', 'Synced')}</span>
             </button>
             <button
               onClick={() => setShowSosModal(true)}
               className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
             >
               <Siren className="w-4 h-4" />
-              <span>108 SOS</span>
+              <span>{t('asha_dashboard.sos_108', '108 SOS')}</span>
             </button>
           </div>
         </div>
@@ -630,10 +690,10 @@ export const AshaDashboard: React.FC = () => {
       {/* ━━━━━━━ 2. CLEAN STATS OVERVIEW ━━━━━━━ */}
       <section className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
         {[
-          { label: "Assigned Households", count: patients.length, filter: "ALL" as const, color: "text-slate-900", icon: Users },
-          { label: "High Risk Cases", count: highRiskCount, filter: "HIGH_RISK" as const, color: "text-red-600", icon: AlertTriangle },
-          { label: "Maternal & ANC", count: ancCount, filter: "ANC" as const, color: "text-violet-600", icon: Baby },
-          { label: "Visits Due Today", count: dueCount, filter: "DUE" as const, color: "text-blue-600", icon: Calendar },
+          { label: t('asha_dashboard.stat_households', 'Assigned Households'), count: patients.length, filter: "ALL" as const, color: "text-slate-900", icon: Users },
+          { label: t('asha_dashboard.stat_high_risk', 'High Risk Cases'), count: highRiskCount, filter: "HIGH_RISK" as const, color: "text-red-600", icon: AlertTriangle },
+          { label: t('asha_dashboard.stat_maternal', 'Maternal & ANC'), count: ancCount, filter: "ANC" as const, color: "text-violet-600", icon: Baby },
+          { label: t('asha_dashboard.stat_due_today', 'Visits Due Today'), count: dueCount, filter: "DUE" as const, color: "text-blue-600", icon: Calendar },
         ].map((item) => {
           const Icon = item.icon;
           const isActive = activeFilter === item.filter;
@@ -664,7 +724,7 @@ export const AshaDashboard: React.FC = () => {
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search by patient name, house (e.g. H-42), or phone..."
+              placeholder={t('asha_dashboard.search_placeholder', 'Search by resident name, house #, or phone...')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:bg-white focus:border-blue-400 transition"
@@ -683,19 +743,19 @@ export const AshaDashboard: React.FC = () => {
             className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition shadow-xs cursor-pointer flex-shrink-0"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Add Patient</span>
+            <span>{t('asha_dashboard.record_checkup', '+ Add Patient')}</span>
           </button>
         </div>
 
         {/* Tab Filters for ASHA Patient Segments */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
           {[
-            { id: "ALL", label: `All Patients (${patients.length})` },
-            { id: "HIGH_RISK", label: `🚨 High Risk (${highRiskCount})` },
-            { id: "ANC", label: `🤰 Maternal ANC (${ancCount})` },
-            { id: "INFANT", label: `👶 Child Vaccine (${infantCount})` },
-            { id: "NCD", label: `💊 NCD & BP/Sugar (${ncdCount})` },
-            { id: "DUE", label: `🕒 Due Today (${dueCount})` },
+            { id: "ALL", label: `${t('asha_dashboard.filter_all', 'All Patients')} (${patients.length})` },
+            { id: "HIGH_RISK", label: `🚨 ${t('asha_dashboard.filter_high_risk', 'High Risk')} (${highRiskCount})` },
+            { id: "ANC", label: `🤰 ${t('asha_dashboard.filter_anc', 'Maternal ANC')} (${ancCount})` },
+            { id: "INFANT", label: `👶 ${t('asha_dashboard.filter_child', 'Child Vaccine')} (${infantCount})` },
+            { id: "NCD", label: `💊 ${t('asha_dashboard.filter_ncd', 'NCD & BP/Sugar')} (${ncdCount})` },
+            { id: "DUE", label: `🕒 ${t('asha_dashboard.filter_due', 'Due Today')} (${dueCount})` },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -717,8 +777,8 @@ export const AshaDashboard: React.FC = () => {
         {filteredPatients.length === 0 ? (
           <div className="bg-white rounded-xl border border-dashed border-slate-300 p-10 text-center">
             <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-            <p className="text-sm font-semibold text-slate-700">No patient records found</p>
-            <p className="text-xs text-slate-400 mt-0.5">Try searching with another keyword or reset the filter.</p>
+            <p className="text-sm font-semibold text-slate-700">{t('asha_dashboard.no_records', 'No patient records found')}</p>
+            <p className="text-xs text-slate-400 mt-0.5">{t('asha_dashboard.no_records_sub', 'Try searching with another keyword or reset the filter.')}</p>
           </div>
         ) : (
           filteredPatients.map((patient) => {
@@ -739,7 +799,7 @@ export const AshaDashboard: React.FC = () => {
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-bold text-sm text-slate-900">{patient.name}</h3>
                       <span className="text-[11px] font-semibold text-slate-500">
-                        {patient.age}y · {patient.gender === "F" ? "Female" : "Male"}
+                        {patient.age}y · {patient.gender === "F" ? t('asha_dashboard.female', 'Female') : t('asha_dashboard.male', 'Male')}
                       </span>
                       <span className="text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded flex items-center gap-1">
                         <MapPin className="w-2.5 h-2.5 text-slate-400" />
@@ -748,16 +808,16 @@ export const AshaDashboard: React.FC = () => {
                       <CategoryBadge category={patient.category} />
                       {patient.completedToday && (
                         <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-0.5">
-                          <Check className="w-3 h-3" /> Checked Today
+                          <Check className="w-3 h-3" /> {t('asha_dashboard.checked_today', 'Checked Today')}
                         </span>
                       )}
                     </div>
 
                     {/* Condition Summary */}
                     <div className="text-xs text-slate-600 flex items-center gap-1.5 flex-wrap">
-                      <span className="font-medium text-slate-800">{patient.condition}</span>
+                      <span className="font-medium text-slate-800">{translateCondition(patient.condition, t)}</span>
                       <span className="text-slate-300">·</span>
-                      <span className="text-slate-500">{patient.status}</span>
+                      <span className="text-slate-500">{translateStatus(patient.status, t)}</span>
                     </div>
 
                     {/* Vital Chips */}
@@ -772,14 +832,14 @@ export const AshaDashboard: React.FC = () => {
                       {/* Maternal tag summary */}
                       {isAnc && patient.maternal?.weeks && (
                         <span className="text-[11px] font-semibold bg-violet-50 text-violet-800 px-2 py-0.5 rounded border border-violet-200">
-                          Week {patient.maternal.weeks} ({patient.maternal.trimester})
+                          {t('asha_dashboard.week', 'Week')} {patient.maternal.weeks} ({patient.maternal.trimester})
                         </span>
                       )}
 
                       {/* Vaccine tag summary */}
                       {isChild && patient.immunization?.vaccinesDue?.[0] && (
                         <span className="text-[11px] font-semibold bg-sky-50 text-sky-800 px-2 py-0.5 rounded border border-sky-200">
-                          Due: {patient.immunization.vaccinesDue[0]}
+                          {t('asha_dashboard.due', 'Due')}: {patient.immunization.vaccinesDue[0]}
                         </span>
                       )}
                     </div>
@@ -790,7 +850,7 @@ export const AshaDashboard: React.FC = () => {
                     <a
                       href={`tel:${patient.phone}`}
                       className="p-2 rounded-lg text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 transition"
-                      title="Call Patient"
+                      title={t('asha_dashboard.call_patient', 'Call Patient')}
                     >
                       <Phone className="w-4 h-4 text-emerald-600" />
                     </a>
@@ -803,7 +863,7 @@ export const AshaDashboard: React.FC = () => {
                           title="Instant Emergency PHC Appointment"
                         >
                           <Zap className="w-3.5 h-3.5 fill-white" />
-                          <span className="hidden sm:inline">Book Emergency PHC</span>
+                          <span className="hidden sm:inline">{t('asha_dashboard.book_phc_btn', 'Book Emergency PHC')}</span>
                           <span className="sm:hidden">PHC</span>
                         </button>
                         <button
@@ -822,7 +882,7 @@ export const AshaDashboard: React.FC = () => {
                       className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition cursor-pointer"
                     >
                       <Stethoscope className="w-3.5 h-3.5 text-blue-600" />
-                      <span>Record & View Tabs</span>
+                      <span>{t('asha_dashboard.record_view_tabs', 'Record & View Tabs')}</span>
                     </button>
                   </div>
                 </div>
@@ -841,10 +901,12 @@ export const AshaDashboard: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
                 <h2 className="font-bold text-slate-900 text-base">
-                  {currentPatient ? `Patient Record: ${formData.name}` : "New Patient Health Record"}
+                  {currentPatient
+                    ? t('asha_dashboard.modal_title_edit', 'Patient Record: {{name}}', { name: formData.name })
+                    : t('asha_dashboard.modal_title_new', 'New Patient Health Record')}
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Complete offline-ready health entry for ASHA field worker
+                  {t('asha_dashboard.modal_subtitle', 'Complete offline-ready health entry for ASHA field worker')}
                 </p>
               </div>
               <button
@@ -858,7 +920,9 @@ export const AshaDashboard: React.FC = () => {
             {/* Basic Identification Row */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
               <div className="col-span-2 sm:col-span-2">
-                <label className="text-[11px] font-bold text-slate-600 block mb-1">Patient Full Name</label>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                  {t('asha_dashboard.patient_full_name', 'Patient Full Name')}
+                </label>
                 <input
                   type="text"
                   placeholder="e.g. Kavita Shinde"
@@ -868,7 +932,9 @@ export const AshaDashboard: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-[11px] font-bold text-slate-600 block mb-1">House Number</label>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                  {t('asha_dashboard.house_number', 'House Number')}
+                </label>
                 <input
                   type="text"
                   placeholder="e.g. H-42"
@@ -878,7 +944,9 @@ export const AshaDashboard: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-[11px] font-bold text-slate-600 block mb-1">Age & Gender</label>
+                <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                  {t('asha_dashboard.age_gender', 'Age & Gender')}
+                </label>
                 <div className="flex gap-1.5">
                   <input
                     type="number"
@@ -891,8 +959,8 @@ export const AshaDashboard: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, gender: e.target.value as "F" | "M" })}
                     className="p-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none"
                   >
-                    <option value="F">Female</option>
-                    <option value="M">Male</option>
+                    <option value="F">{t('asha_dashboard.female', 'Female')}</option>
+                    <option value="M">{t('asha_dashboard.male', 'Male')}</option>
                   </select>
                 </div>
               </div>
@@ -929,14 +997,14 @@ export const AshaDashboard: React.FC = () => {
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                       <Heart className="w-3.5 h-3.5 text-red-500" />
-                      <span>Blood Pressure: {formData.vitals?.bp || "120/80"} mmHg</span>
+                      <span>{t('asha_dashboard.blood_pressure', 'Blood Pressure')}: {formData.vitals?.bp || "120/80"} mmHg</span>
                     </label>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      { label: "Normal (120/80)", val: "120/80" },
-                      { label: "Borderline (135/88)", val: "135/88" },
-                      { label: "High (150/95)", val: "150/95" },
+                      { label: t('asha_dashboard.bp_normal', 'Normal (120/80)'), val: "120/80" },
+                      { label: t('asha_dashboard.bp_borderline', 'Borderline (135/88)'), val: "135/88" },
+                      { label: t('asha_dashboard.bp_high', 'High (150/95)'), val: "150/95" },
                     ].map((bp) => (
                       <button
                         key={bp.val}
@@ -959,7 +1027,9 @@ export const AshaDashboard: React.FC = () => {
                 {/* Vitals Grid: Sugar, SpO2, Hb, Weight */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   <div>
-                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Blood Sugar (mg/dL)</label>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                      {t('asha_dashboard.blood_sugar', 'Blood Sugar (mg/dL)')}
+                    </label>
                     <input
                       type="number"
                       value={formData.vitals?.sugar || "100"}
@@ -970,7 +1040,9 @@ export const AshaDashboard: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-slate-600 block mb-1">SpO2 Oxygen (%)</label>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                      {t('asha_dashboard.spo2_oxygen', 'SpO2 Oxygen (%)')}
+                    </label>
                     <input
                       type="number"
                       value={formData.vitals?.spo2 || "98"}
@@ -981,7 +1053,9 @@ export const AshaDashboard: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Hemoglobin Hb (g/dL)</label>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                      {t('asha_dashboard.hemoglobin', 'Hemoglobin Hb (g/dL)')}
+                    </label>
                     <input
                       type="text"
                       value={formData.vitals?.hb || "11.5"}
@@ -992,7 +1066,9 @@ export const AshaDashboard: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Weight (kg)</label>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                      {t('asha_dashboard.weight_kg', 'Weight (kg)')}
+                    </label>
                     <input
                       type="number"
                       value={formData.vitals?.weight || "52"}
@@ -1005,7 +1081,9 @@ export const AshaDashboard: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Primary Symptoms / Condition</label>
+                  <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                    {t('asha_dashboard.primary_symptoms', 'Primary Symptoms / Condition')}
+                  </label>
                   <input
                     type="text"
                     placeholder="e.g. Mild headache, routine pregnancy follow-up"
@@ -1021,7 +1099,9 @@ export const AshaDashboard: React.FC = () => {
             {modalActiveTab === "MATERNAL" && (
               <div className="space-y-3.5 pt-1">
                 <div className="flex items-center justify-between bg-violet-50 p-2.5 rounded-lg border border-violet-200">
-                  <span className="text-xs font-bold text-violet-900">Mark as Pregnant Mother (ANC Case)</span>
+                  <span className="text-xs font-bold text-violet-900">
+                    {t('asha_dashboard.mark_pregnant', 'Mark as Pregnant Mother (ANC Case)')}
+                  </span>
                   <input
                     type="checkbox"
                     checked={formData.maternal?.isPregnant || false}
@@ -1037,7 +1117,9 @@ export const AshaDashboard: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Current Trimester</label>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                      {t('asha_dashboard.current_trimester', 'Current Trimester')}
+                    </label>
                     <select
                       value={formData.maternal?.trimester || "2nd Trimester"}
                       onChange={(e) =>
@@ -1048,14 +1130,16 @@ export const AshaDashboard: React.FC = () => {
                       }
                       className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none"
                     >
-                      <option value="1st Trimester">1st Trimester (1-12 Weeks)</option>
-                      <option value="2nd Trimester">2nd Trimester (13-27 Weeks)</option>
-                      <option value="3rd Trimester">3rd Trimester (28-40 Weeks)</option>
-                      <option value="Postnatal (PNC)">Postnatal (PNC)</option>
+                      <option value="1st Trimester">{t('asha_dashboard.trimester_1', '1st Trimester (1-12 Weeks)')}</option>
+                      <option value="2nd Trimester">{t('asha_dashboard.trimester_2', '2nd Trimester (13-27 Weeks)')}</option>
+                      <option value="3rd Trimester">{t('asha_dashboard.trimester_3', '3rd Trimester (28-40 Weeks)')}</option>
+                      <option value="Postnatal (PNC)">{t('asha_dashboard.trimester_pnc', 'Postnatal (PNC)')}</option>
                     </select>
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Gestational Age (Weeks)</label>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                      {t('asha_dashboard.gestational_age', 'Gestational Age (Weeks)')}
+                    </label>
                     <input
                       type="number"
                       value={formData.maternal?.weeks || 20}
@@ -1071,7 +1155,9 @@ export const AshaDashboard: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Expected Delivery Date (EDD)</label>
+                  <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                    {t('asha_dashboard.edd', 'Expected Delivery Date (EDD)')}
+                  </label>
                   <input
                     type="date"
                     value={formData.maternal?.edd || ""}
@@ -1088,7 +1174,7 @@ export const AshaDashboard: React.FC = () => {
                 {/* High Risk Flags Checklist for ASHA */}
                 <div>
                   <label className="text-[11px] font-bold text-slate-700 block mb-1.5">
-                    High Risk Pregnancy Markers (Any present?):
+                    {t('asha_dashboard.high_risk_markers', 'High Risk Pregnancy Markers (Any present?):')}
                   </label>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     {[
@@ -1137,7 +1223,9 @@ export const AshaDashboard: React.FC = () => {
             {modalActiveTab === "CHILD" && (
               <div className="space-y-3.5 pt-1">
                 <div className="flex items-center justify-between bg-sky-50 p-2.5 rounded-lg border border-sky-200">
-                  <span className="text-xs font-bold text-sky-900">Mark as Infant / Child Record</span>
+                  <span className="text-xs font-bold text-sky-900">
+                    {t('asha_dashboard.mark_child', 'Mark as Infant / Child Record')}
+                  </span>
                   <input
                     type="checkbox"
                     checked={formData.immunization?.isChild || false}
@@ -1153,7 +1241,9 @@ export const AshaDashboard: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Child Date of Birth</label>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                      {t('asha_dashboard.child_dob', 'Child Date of Birth')}
+                    </label>
                     <input
                       type="date"
                       value={formData.immunization?.childDob || ""}
@@ -1167,7 +1257,9 @@ export const AshaDashboard: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Nutrition Status</label>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                      {t('asha_dashboard.nutrition_status', 'Nutrition Status')}
+                    </label>
                     <select
                       value={formData.immunization?.nutritionStatus || "Normal"}
                       onChange={(e) =>
@@ -1178,9 +1270,9 @@ export const AshaDashboard: React.FC = () => {
                       }
                       className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none"
                     >
-                      <option value="Normal">Normal Weight / Healthy</option>
-                      <option value="Moderate (MAM)">Moderate Underweight (MAM)</option>
-                      <option value="Severe (SAM)">Severely Malnourished (SAM)</option>
+                      <option value="Normal">{t('asha_dashboard.nutrition_normal', 'Normal Weight / Healthy')}</option>
+                      <option value="Moderate (MAM)">{t('asha_dashboard.nutrition_mam', 'Moderate Underweight (MAM)')}</option>
+                      <option value="Severe (SAM)">{t('asha_dashboard.nutrition_sam', 'Severely Malnourished (SAM)')}</option>
                     </select>
                   </div>
                 </div>
@@ -1188,7 +1280,7 @@ export const AshaDashboard: React.FC = () => {
                 {/* Vaccines Checklist */}
                 <div>
                   <label className="text-[11px] font-bold text-slate-700 block mb-1.5">
-                    Vaccines Administered / Due Today:
+                    {t('asha_dashboard.vaccines_due_admin', 'Vaccines Administered / Due Today:')}
                   </label>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     {[
@@ -1251,7 +1343,9 @@ export const AshaDashboard: React.FC = () => {
                       }
                       className="rounded text-blue-600"
                     />
-                    <span className="text-xs font-bold text-slate-800">Hypertension (High BP)</span>
+                    <span className="text-xs font-bold text-slate-800">
+                      {t('asha_dashboard.hypertension', 'Hypertension (High BP)')}
+                    </span>
                   </label>
                   <label className="flex items-center gap-2 p-2.5 rounded-lg border border-slate-200 bg-slate-50 cursor-pointer">
                     <input
@@ -1265,13 +1359,17 @@ export const AshaDashboard: React.FC = () => {
                       }
                       className="rounded text-blue-600"
                     />
-                    <span className="text-xs font-bold text-slate-800">Type-2 Diabetes</span>
+                    <span className="text-xs font-bold text-slate-800">
+                      {t('asha_dashboard.diabetes', 'Type-2 Diabetes')}
+                    </span>
                   </label>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Medication Adherence</label>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                      {t('asha_dashboard.med_adherence', 'Medication Adherence')}
+                    </label>
                     <select
                       value={formData.ncd?.medicationAdherence || "Regular"}
                       onChange={(e) =>
@@ -1282,13 +1380,15 @@ export const AshaDashboard: React.FC = () => {
                       }
                       className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none"
                     >
-                      <option value="Regular">Taking Daily (Regular)</option>
-                      <option value="Irregular">Irregular / Forgets Often</option>
-                      <option value="Stopped">Stopped Taking Meds</option>
+                      <option value="Regular">{t('asha_dashboard.med_regular', 'Taking Daily (Regular)')}</option>
+                      <option value="Irregular">{t('asha_dashboard.med_irregular', 'Irregular / Forgets Often')}</option>
+                      <option value="Stopped">{t('asha_dashboard.med_stopped', 'Stopped Taking Meds')}</option>
                     </select>
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Monthly Meds Given?</label>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                      {t('asha_dashboard.monthly_meds', 'Monthly Meds Given?')}
+                    </label>
                     <select
                       value={formData.ncd?.monthlyMedsDelivered ? "Yes" : "No"}
                       onChange={(e) =>
@@ -1299,14 +1399,14 @@ export const AshaDashboard: React.FC = () => {
                       }
                       className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none"
                     >
-                      <option value="Yes">Yes — 30 Day Supply Given</option>
-                      <option value="No">No — Refill Needed from PHC</option>
+                      <option value="Yes">{t('asha_dashboard.meds_yes', 'Yes — 30 Day Supply Given')}</option>
+                      <option value="No">{t('asha_dashboard.meds_no', 'No — Refill Needed from PHC')}</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 text-xs text-amber-900 flex items-center justify-between">
-                  <span>Lifestyle Counseling Conducted (Low salt, daily walk, diet)</span>
+                  <span>{t('asha_dashboard.lifestyle_counseling', 'Lifestyle Counseling Conducted (Low salt, daily walk, diet)')}</span>
                   <input
                     type="checkbox"
                     checked={formData.ncd?.lifestyleCounseling || false}
@@ -1327,7 +1427,7 @@ export const AshaDashboard: React.FC = () => {
               <div className="space-y-3.5 pt-1">
                 <div>
                   <label className="text-[11px] font-bold text-slate-700 block mb-1.5">
-                    Free Supplies Delivered to Household:
+                    {t('asha_dashboard.supplies_delivered', 'Free Supplies Delivered to Household:')}
                   </label>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     {[
@@ -1374,7 +1474,9 @@ export const AshaDashboard: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Referral Action</label>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                      {t('asha_dashboard.referral_action', 'Referral Action')}
+                    </label>
                     <select
                       value={formData.services?.referralStatus || "None"}
                       onChange={(e) =>
@@ -1385,13 +1487,15 @@ export const AshaDashboard: React.FC = () => {
                       }
                       className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 outline-none"
                     >
-                      <option value="None">None (Routine Care)</option>
-                      <option value="PHC Doctor Referral">PHC Doctor / Teleconsult</option>
-                      <option value="108 Emergency Ambulance">108 Emergency Ambulance</option>
+                      <option value="None">{t('asha_dashboard.ref_none', 'None (Routine Care)')}</option>
+                      <option value="PHC Doctor Referral">{t('asha_dashboard.ref_phc', 'PHC Doctor / Teleconsult')}</option>
+                      <option value="108 Emergency Ambulance">{t('asha_dashboard.ref_108', '108 Emergency Ambulance')}</option>
                     </select>
                   </div>
                   <div>
-                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Next Follow-Up Date</label>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                      {t('asha_dashboard.next_followup', 'Next Follow-Up Date')}
+                    </label>
                     <input
                       type="date"
                       value={formData.services?.nextVisitDate || ""}
@@ -1407,7 +1511,9 @@ export const AshaDashboard: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-bold text-slate-600 block mb-1">ASHA Field Remarks / Notes</label>
+                  <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                    {t('asha_dashboard.asha_remarks', 'ASHA Field Remarks / Notes')}
+                  </label>
                   <input
                     type="text"
                     placeholder="e.g. Advised rest, family briefed about PHC checkup"
@@ -1427,7 +1533,7 @@ export const AshaDashboard: React.FC = () => {
             {/* Modal Bottom Save Action */}
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
               <span className="text-[11px] text-slate-400 font-medium">
-                Offline encrypted save to IndexedDB
+                {t('asha_dashboard.offline_encrypted_save', 'Offline encrypted save to IndexedDB')}
               </span>
               <div className="flex gap-2">
                 <button
@@ -1435,7 +1541,7 @@ export const AshaDashboard: React.FC = () => {
                   onClick={() => setShowRecordModal(false)}
                   className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
                 >
-                  Cancel
+                  {t('asha_dashboard.cancel', 'Cancel')}
                 </button>
                 <button
                   type="button"
@@ -1443,7 +1549,7 @@ export const AshaDashboard: React.FC = () => {
                   className="px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition cursor-pointer flex items-center gap-1.5"
                 >
                   <ShieldCheck className="w-4 h-4" />
-                  <span>Save Patient Record</span>
+                  <span>{t('asha_dashboard.save_record', 'Save Patient Record')}</span>
                 </button>
               </div>
             </div>

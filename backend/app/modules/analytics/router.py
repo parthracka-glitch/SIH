@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth.dependencies import get_current_active_user
+from app.core.auth.dependencies import get_optional_user
 from app.core.auth.models import User
 from app.core.database.dependencies import get_db
 from app.modules.analytics import service
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/analytics", tags=["Public Health & Epidemiological A
 )
 async def get_overview(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User | None = Depends(get_optional_user),
 ):
     return await service.get_public_health_overview(db)
 
@@ -31,6 +31,7 @@ async def get_overview(
 )
 async def get_disease_trends(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User | None = Depends(get_optional_user),
 ):
     return await service.get_disease_trends(db)
+

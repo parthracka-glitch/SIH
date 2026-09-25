@@ -16,17 +16,21 @@ import {
   PhoneCall,
   Heart,
   ChevronRight,
-  User
+  User,
+  FlaskConical
 } from "lucide-react";
 import { DigitalIDCard } from "../components/DigitalIDCard";
 import { FacilityFinder } from "../components/FacilityFinder";
 import { useAuthStore } from "../lib/auth";
+import { PatientLabReportsModal } from "../components/PatientLabReportsModal";
+import { getPatientLabReports, PatientLabReport } from "../data/patientLabReports";
 
 export const PatientDashboard: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [showFacilities, setShowFacilities] = useState(false);
+  const [isLabModalOpen, setIsLabModalOpen] = useState(false);
 
   const patient = {
     name: user?.full_name || "Ramesh Yadav",
@@ -37,6 +41,12 @@ export const PatientDashboard: React.FC = () => {
     age: 38,
     gender: "Male"
   };
+
+  const patientReports = getPatientLabReports({
+    id: "pat-001",
+    abhaId: patient.abhaNumber,
+    name: patient.name
+  });
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12 font-sans">
@@ -87,8 +97,8 @@ export const PatientDashboard: React.FC = () => {
         <div className="absolute right-0 top-0 w-72 h-72 bg-white/5 rounded-full blur-3xl pointer-events-none" />
       </div>
 
-      {/* 2. Big, Simple 4-Card Quick Navigation for Rural Citizens */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+      {/* 2. Big, Simple 5-Card Quick Navigation for Rural Citizens */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5">
         <Link
           to="/teleconsult"
           className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs hover:border-blue-500 hover:shadow-md transition flex flex-col justify-between group"
@@ -106,11 +116,28 @@ export const PatientDashboard: React.FC = () => {
           </div>
         </Link>
 
+        <button
+          onClick={() => setIsLabModalOpen(true)}
+          className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs hover:border-teal-500 hover:shadow-md transition flex flex-col justify-between group text-left cursor-pointer"
+        >
+          <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center group-hover:scale-105 transition">
+            <FlaskConical className="w-5 h-5" />
+          </div>
+          <div className="mt-3">
+            <h3 className="font-bold text-xs sm:text-sm text-slate-900 group-hover:text-teal-600 transition">
+              {t('citizen.my_lab_reports', 'Lab Reports')}
+            </h3>
+            <p className="text-[11px] text-teal-600 font-semibold mt-0.5">
+              ● {patientReports.length} {t('citizen.reports_verified', 'Verified Tests')}
+            </p>
+          </div>
+        </button>
+
         <Link
           to="/health-card"
           className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs hover:border-blue-500 hover:shadow-md transition flex flex-col justify-between group"
         >
-          <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center group-hover:scale-105 transition">
+          <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center group-hover:scale-105 transition">
             <CreditCard className="w-5 h-5" />
           </div>
           <div className="mt-3">
@@ -202,6 +229,89 @@ export const PatientDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* 4. MY DIAGNOSTIC LAB REPORTS (ABDM Verified) */}
+      <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
+              <FlaskConical className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-sm sm:text-base font-bold text-slate-900">
+                {t('citizen.my_lab_reports', 'My Diagnostic Lab Reports')}
+              </h2>
+              <p className="text-[11px] text-slate-400">
+                {t('citizen.lab_reports_sub', 'Official pathology test results linked to your ABHA Health ID')}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/60 flex items-center space-x-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>{patientReports.length} {t('citizen.reports_verified', 'Reports Verified')}</span>
+            </span>
+
+            <button
+              onClick={() => setIsLabModalOpen(true)}
+              className="text-xs font-bold text-teal-700 hover:text-teal-800 bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg border border-teal-200 transition cursor-pointer flex items-center space-x-1"
+            >
+              <span>{t('citizen.view_all_reports', 'View Full Reports')}</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Reports Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+          {patientReports.map((rep) => (
+            <div
+              key={rep.id}
+              onClick={() => setIsLabModalOpen(true)}
+              className="bg-slate-50/70 hover:bg-teal-50/30 p-4 rounded-xl border border-slate-200/80 hover:border-teal-300 transition cursor-pointer flex flex-col justify-between group space-y-3 shadow-xs"
+            >
+              <div>
+                <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+                  <span className="font-mono">{rep.reportNumber}</span>
+                  <span className="font-semibold text-teal-700 bg-teal-50 px-1.5 py-0.2 rounded">{rep.category}</span>
+                </div>
+                <h3 className="font-bold text-xs text-slate-900 group-hover:text-teal-700 transition line-clamp-1">
+                  {rep.testName}
+                </h3>
+                <p className="text-[10px] text-slate-500 mt-0.5">
+                  {rep.collectedAt.split(',')[0]} • {rep.facility.split(',')[0]}
+                </p>
+
+                {/* Key Metrics Chips */}
+                <div className="mt-2.5 space-y-1">
+                  {rep.parameters.slice(0, 2).map((p, idx) => (
+                    <div key={idx} className="flex justify-between items-center text-[10px] bg-white px-2 py-1 rounded border border-slate-200/60">
+                      <span className="text-slate-600 font-medium truncate max-w-[130px]">{p.name}</span>
+                      <strong className={p.status !== 'NORMAL' ? 'text-amber-800 font-mono' : 'text-slate-900 font-mono'}>
+                        {p.value} {p.unit}
+                      </strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[10px]">
+                <span className={`font-bold px-1.5 py-0.5 rounded ${
+                  rep.overallStatus === 'NORMAL' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'
+                }`}>
+                  ● {rep.overallStatus}
+                </span>
+
+                <span className="text-teal-700 font-semibold group-hover:underline flex items-center space-x-0.5">
+                  <span>{t('citizen.view_pdf', 'View Report')}</span>
+                  <ChevronRight className="w-3 h-3" />
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* 4. Simple 2-Column Split: Active OPD Ticket & ABHA Card Preview */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
         {/* Active OPD Ticket */}
@@ -262,6 +372,21 @@ export const PatientDashboard: React.FC = () => {
 
       {/* Optional Facility Finder */}
       {showFacilities && <FacilityFinder />}
+
+      {/* Patient Lab Reports Full ABDM Viewer Modal */}
+      <PatientLabReportsModal
+        isOpen={isLabModalOpen}
+        onClose={() => setIsLabModalOpen(false)}
+        patient={{
+          id: "pat-001",
+          full_name: patient.name,
+          abha_id: patient.abhaNumber,
+          age: patient.age,
+          gender: patient.gender,
+          village: patient.village
+        }}
+        allowOrderTests={false}
+      />
     </div>
   );
 };

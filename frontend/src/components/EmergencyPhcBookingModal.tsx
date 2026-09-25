@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Building2,
   Calendar,
@@ -44,6 +45,7 @@ export const EmergencyPhcBookingModal: React.FC<EmergencyPhcBookingModalProps> =
   patient,
   onSuccess,
 }) => {
+  const { t } = useTranslation();
   const [selectedFacility, setSelectedFacility] = useState('phc-sinnar');
   const [transportNeeded, setTransportNeeded] = useState(true);
   const [isBooking, setIsBooking] = useState(false);
@@ -142,10 +144,10 @@ export const EmergencyPhcBookingModal: React.FC<EmergencyPhcBookingModalProps> =
             </div>
             <div>
               <h3 className="font-extrabold text-base sm:text-lg leading-tight">
-                Emergency PHC Fast-Track Booking
+                {t('emergency_booking.title', 'Emergency PHC Fast-Track Booking')}
               </h3>
               <p className="text-xs text-red-100 font-medium">
-                Single-Click Priority Appointment & Emergency Triage
+                {t('emergency_booking.subtitle', 'Single-Click Priority Appointment & Emergency Triage')}
               </p>
             </div>
           </div>
@@ -167,7 +169,7 @@ export const EmergencyPhcBookingModal: React.FC<EmergencyPhcBookingModalProps> =
                   <span className="font-extrabold text-slate-900 text-sm">{patient.name}</span>
                   {patient.age && (
                     <span className="text-xs font-semibold text-slate-500">
-                      {patient.age}y · {patient.gender === 'F' ? 'Female' : 'Male'}
+                      {patient.age}y · {patient.gender === 'F' ? t('health_card.female', 'Female') : t('health_card.male', 'Male')}
                     </span>
                   )}
                   {patient.house && (
@@ -187,15 +189,15 @@ export const EmergencyPhcBookingModal: React.FC<EmergencyPhcBookingModalProps> =
                 )}
               </div>
               <span className="bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider whitespace-nowrap">
-                RED TIER 1
+                {t('emergency_booking.tier_red', 'RED TIER 1')}
               </span>
             </div>
 
             {/* Nearest Facility Selector */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-                <span>Select Nearest Hospital / Health Centre:</span>
-                <span className="text-[11px] text-blue-600 font-semibold">GPS Geo-Sorted</span>
+                <span>{t('emergency_booking.select_hospital', 'Select Nearest Hospital / Health Centre:')}</span>
+                <span className="text-[11px] text-blue-600 font-semibold">{t('emergency_booking.geo_sorted', 'GPS Geo-Sorted')}</span>
               </label>
 
               <div className="space-y-2">
@@ -235,15 +237,15 @@ export const EmergencyPhcBookingModal: React.FC<EmergencyPhcBookingModalProps> =
             {/* Fast-Track Slot & Priority Pass Details */}
             <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 space-y-1.5 text-xs">
               <div className="flex items-center justify-between font-bold text-slate-800">
-                <span>Fast-Track Service:</span>
-                <span className="text-emerald-700 font-extrabold">Instant Priority OPD Slot (0 Wait)</span>
+                <span>{t('emergency_booking.fast_track_service', 'Fast-Track Service:')}</span>
+                <span className="text-emerald-700 font-extrabold">{t('emergency_booking.fast_track_slot', 'Instant Priority OPD Slot (0 Wait)')}</span>
               </div>
               <div className="flex items-center justify-between text-slate-600">
-                <span>Assigned Room:</span>
+                <span>{t('emergency_booking.assigned_room', 'Assigned Room:')}</span>
                 <span className="font-semibold text-slate-900">{currentFacility.room}</span>
               </div>
               <div className="flex items-center justify-between text-slate-600">
-                <span>Doctor on Duty:</span>
+                <span>{t('emergency_booking.doctor_on_duty', 'Doctor on Duty:')}</span>
                 <span className="font-semibold text-slate-900">{currentFacility.doctor}</span>
               </div>
             </div>
@@ -254,10 +256,10 @@ export const EmergencyPhcBookingModal: React.FC<EmergencyPhcBookingModalProps> =
                 <Siren className="w-5 h-5 text-amber-600" />
                 <div>
                   <span className="text-xs font-bold text-amber-950 block">
-                    Dispatch 108 Ambulance for Pickup?
+                    {t('emergency_booking.dispatch_108_title', 'Dispatch 108 Ambulance for Pickup?')}
                   </span>
                   <span className="text-[11px] text-amber-800">
-                    Emergency ambulance vehicle directed to patient location immediately
+                    {t('emergency_booking.dispatch_108_desc', 'Emergency ambulance vehicle directed to patient location immediately')}
                   </span>
                 </div>
               </div>
@@ -278,12 +280,12 @@ export const EmergencyPhcBookingModal: React.FC<EmergencyPhcBookingModalProps> =
               <Siren className={`w-4 h-4 ${isBooking ? 'animate-spin' : ''}`} />
               <span>
                 {isBooking
-                  ? 'Confirming Emergency Slot...'
-                  : '⚡ Book Emergency PHC Appointment Now'}
+                  ? t('emergency_booking.confirming_btn', 'Confirming Emergency Slot...')
+                  : t('emergency_booking.book_now_btn', '⚡ Book Emergency PHC Appointment Now')}
               </span>
             </button>
             <p className="text-[10px] text-center text-slate-400 font-medium">
-              Generates instant electronic triage token & triggers SMS notification to PHC doctor on duty.
+              {t('emergency_booking.footer_note', 'Generates instant electronic triage token & triggers SMS notification to PHC doctor on duty.')}
             </p>
           </div>
         ) : (
@@ -295,13 +297,13 @@ export const EmergencyPhcBookingModal: React.FC<EmergencyPhcBookingModalProps> =
 
             <div>
               <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold px-3 py-1 rounded-full inline-block mb-1.5">
-                Emergency Fast-Track Confirmed
+                {t('emergency_booking.pass_confirmed', 'Emergency Fast-Track Confirmed')}
               </span>
               <h3 className="font-black text-xl text-slate-900">
                 Token #{bookingSuccess.tokenNumber}
               </h3>
               <p className="text-xs text-slate-500 mt-1">
-                Hospital notified. Patient is registered for zero-wait casualty consultation.
+                {t('emergency_booking.pass_notice', 'Hospital notified. Patient is registered for zero-wait casualty consultation.')}
               </p>
             </div>
 
@@ -316,21 +318,21 @@ export const EmergencyPhcBookingModal: React.FC<EmergencyPhcBookingModalProps> =
               </div>
               <div className="text-left text-xs space-y-1 pt-2 border-t border-slate-200">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Patient:</span>
+                  <span className="text-slate-500">{t('emergency_booking.patient_label', 'Patient:')}</span>
                   <span className="font-bold text-slate-800">{bookingSuccess.patientName}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Facility:</span>
+                  <span className="text-slate-500">{t('emergency_booking.facility_label', 'Facility:')}</span>
                   <span className="font-bold text-slate-800 text-right">{bookingSuccess.facility}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Doctor on Duty:</span>
+                  <span className="text-slate-500">{t('emergency_booking.doctor_label', 'Doctor on Duty:')}</span>
                   <span className="font-bold text-slate-800 text-right">{bookingSuccess.doctor}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Ambulance 108:</span>
+                  <span className="text-slate-500">{t('emergency_booking.ambulance_label', 'Ambulance 108:')}</span>
                   <span className={`font-bold ${bookingSuccess.transportDispatched ? 'text-amber-700' : 'text-slate-600'}`}>
-                    {bookingSuccess.transportDispatched ? 'Dispatched (ETA 8 mins)' : 'Self Transport'}
+                    {bookingSuccess.transportDispatched ? t('emergency_booking.dispatched_eta', 'Dispatched (ETA 8 mins)') : t('emergency_booking.self_transport', 'Self Transport')}
                   </span>
                 </div>
               </div>
@@ -342,13 +344,13 @@ export const EmergencyPhcBookingModal: React.FC<EmergencyPhcBookingModalProps> =
                 className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer"
               >
                 <Share2 className="w-3.5 h-3.5" />
-                <span>Send SMS to Patient</span>
+                <span>{t('emergency_booking.send_sms_btn', 'Send SMS to Patient')}</span>
               </button>
               <button
                 onClick={handleClose}
                 className="flex items-center gap-1.5 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs cursor-pointer shadow-xs"
               >
-                Done
+                {t('emergency_booking.done_btn', 'Done')}
               </button>
             </div>
           </div>

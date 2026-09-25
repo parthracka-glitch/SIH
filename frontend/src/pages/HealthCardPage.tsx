@@ -238,15 +238,15 @@ export const HealthCardPage: React.FC = () => {
         <div>
           <div className="flex items-center space-x-2">
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              ABHA Digital Health Card
+              {t('health_card.title', 'ABHA Digital Health Card')}
             </h1>
             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
               <ShieldCheck className="w-3 h-3 mr-1 text-emerald-600" />
-              ABDM Verified
+              {t('health_card.abdm_verified', 'ABDM Verified')}
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            National Ayushman Bharat Digital Mission • Official Citizen Health Identity
+            {t('health_card.subtitle', 'National Ayushman Bharat Digital Mission • Official Citizen Health Identity')}
           </p>
         </div>
 
@@ -260,7 +260,7 @@ export const HealthCardPage: React.FC = () => {
                 cardTheme === 'light' ? 'bg-white text-slate-900 shadow-xs font-semibold' : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              Classic
+              {t('health_card.classic', 'Classic')}
             </button>
             <button
               onClick={() => setCardTheme('dark')}
@@ -268,7 +268,7 @@ export const HealthCardPage: React.FC = () => {
                 cardTheme === 'dark' ? 'bg-slate-800 text-white shadow-xs font-semibold' : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              Dark
+              {t('health_card.dark', 'Dark')}
             </button>
           </div>
 
@@ -277,7 +277,7 @@ export const HealthCardPage: React.FC = () => {
             className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50 transition shadow-xs"
           >
             {copiedField === 'abha' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
-            <span>{copiedField === 'abha' ? 'Copied' : 'Copy ID'}</span>
+            <span>{copiedField === 'abha' ? t('health_card.copied', 'Copied') : t('health_card.copy_id', 'Copy ID')}</span>
           </button>
 
           <button
@@ -285,7 +285,7 @@ export const HealthCardPage: React.FC = () => {
             className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 transition shadow-xs"
           >
             <Printer className="w-3.5 h-3.5" />
-            <span>Print PVC Card</span>
+            <span>{t('health_card.print_pvc', 'Print PVC Card')}</span>
           </button>
         </div>
       </div>
@@ -295,8 +295,8 @@ export const HealthCardPage: React.FC = () => {
         {!isPatientRole && (
           <div className="lg:col-span-4 bg-white rounded-xl border border-slate-200 p-3.5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Patient Directory</span>
-              <span className="text-[11px] text-slate-400 font-medium">{filteredPatients.length} records</span>
+              <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">{t('health_card.patient_directory', 'Patient Directory')}</span>
+              <span className="text-[11px] text-slate-400 font-medium">{filteredPatients.length} {t('health_card.records', 'records')}</span>
             </div>
 
             <div className="relative">
@@ -305,7 +305,7 @@ export const HealthCardPage: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search citizen or ABHA..."
+                placeholder={t('health_card.search_citizen', 'Search citizen or ABHA...')}
                 className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-500 focus:bg-white transition"
               />
             </div>
@@ -369,17 +369,17 @@ export const HealthCardPage: React.FC = () => {
                   </div>
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                      National Health Authority • Govt. of India
+                      {t('health_card.nha_title', 'National Health Authority • Govt. of India')}
                     </div>
                     <div className="text-xs font-bold text-slate-900 dark:text-white">
-                      Ayushman Bharat Health Account (ABHA)
+                      {t('health_card.abha_account', 'Ayushman Bharat Health Account (ABHA)')}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-1.5 text-[10px] font-mono text-slate-400 dark:text-slate-500">
                   <Lock className="w-3 h-3 text-emerald-500" />
-                  <span>ISO 27001 SECURED</span>
+                  <span>{t('health_card.iso_secured', 'ISO 27001 SECURED')}</span>
                 </div>
               </div>
 
@@ -394,7 +394,7 @@ export const HealthCardPage: React.FC = () => {
                   }`}>
                     <User className="w-10 h-10 text-slate-400 dark:text-slate-500" />
                     <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mt-1">
-                      CITIZEN
+                      {t('health_card.citizen', 'CITIZEN')}
                     </span>
                   </div>
                 </div>
@@ -425,15 +425,17 @@ export const HealthCardPage: React.FC = () => {
                   {/* Vitals & Demographics Info Grid */}
                   <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800 text-[11px]">
                     <div>
-                      <span className="block text-[10px] text-slate-400 uppercase">Gender</span>
-                      <span className="font-semibold text-slate-700 dark:text-slate-200">{selectedPatient.gender}</span>
+                      <span className="block text-[10px] text-slate-400 uppercase">{t('health_card.gender', 'Gender')}</span>
+                      <span className="font-semibold text-slate-700 dark:text-slate-200">
+                        {selectedPatient.gender === 'Female' ? t('health_card.female', 'Female') : selectedPatient.gender === 'Male' ? t('health_card.male', 'Male') : selectedPatient.gender}
+                      </span>
                     </div>
                     <div>
-                      <span className="block text-[10px] text-slate-400 uppercase">DOB</span>
+                      <span className="block text-[10px] text-slate-400 uppercase">{t('health_card.dob', 'DOB')}</span>
                       <span className="font-semibold text-slate-700 dark:text-slate-200">{selectedPatient.date_of_birth?.slice(0, 10) || '1986-07-14'}</span>
                     </div>
                     <div>
-                      <span className="block text-[10px] text-slate-400 uppercase">Blood Group</span>
+                      <span className="block text-[10px] text-slate-400 uppercase">{t('health_card.blood_group', 'Blood Group')}</span>
                       <span className="font-bold text-rose-600 dark:text-rose-400">{selectedPatient.blood_group || 'B+'}</span>
                     </div>
                   </div>
@@ -444,7 +446,7 @@ export const HealthCardPage: React.FC = () => {
                   <div
                     onClick={() => setShowQrModal(true)}
                     className="p-2 bg-white rounded-xl border border-slate-200 shadow-xs cursor-pointer hover:border-slate-400 transition flex flex-col items-center group"
-                    title="Click to expand verification QR"
+                    title={t('health_card.scan_qr', 'Click to expand verification QR')}
                   >
                     <QRCodeSVG
                       value={abhaQrValue}
@@ -453,7 +455,7 @@ export const HealthCardPage: React.FC = () => {
                       includeMargin={false}
                     />
                     <span className="text-[8px] font-bold text-slate-500 uppercase tracking-wider mt-1 group-hover:text-blue-600 transition">
-                      Scan QR
+                      {t('health_card.scan_qr', 'Scan QR')}
                     </span>
                   </div>
                 </div>
@@ -463,10 +465,10 @@ export const HealthCardPage: React.FC = () => {
               <div className="flex flex-col sm:flex-row items-center justify-between text-[11px] pt-3 border-t border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 gap-2">
                 <div className="flex items-center space-x-1.5">
                   <Phone className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                  <span>Emergency: <strong className="text-slate-700 dark:text-slate-200">{selectedPatient.emergency_contact || '+91 98765 43210'}</strong></span>
+                  <span>{t('health_card.emergency', 'Emergency')}: <strong className="text-slate-700 dark:text-slate-200">{selectedPatient.emergency_contact || '+91 98765 43210'}</strong></span>
                 </div>
                 <div className="text-[10px] text-slate-400 font-medium">
-                  ABDM Milestone 1/2/3 Validated Pass
+                  {t('health_card.abdm_milestone', 'ABDM Milestone 1/2/3 Validated Pass')}
                 </div>
               </div>
             </div>
@@ -477,10 +479,10 @@ export const HealthCardPage: React.FC = () => {
             <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 flex items-start space-x-3 text-xs">
               <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <div>
-                <span className="font-bold text-amber-900">Recorded Allergies: </span>
+                <span className="font-bold text-amber-900">{t('health_card.recorded_allergies', 'Recorded Allergies')}: </span>
                 <span className="text-amber-800">{selectedPatient.allergies}</span>
                 <p className="text-[11px] text-amber-700/80 mt-0.5">
-                  Automated Clinical Decision Support (CDSS) drug-interaction checks enabled.
+                  {t('health_card.cdss_notice', 'Automated Clinical Decision Support (CDSS) drug-interaction checks enabled.')}
                 </p>
               </div>
             </div>
@@ -492,11 +494,11 @@ export const HealthCardPage: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <FileText className="w-4 h-4 text-blue-600" />
                 <h3 className="text-sm font-bold text-slate-900">
-                  Medical Record History (EHR)
+                  {t('health_card.ehr_title', 'Medical Record History (EHR)')}
                 </h3>
               </div>
               <span className="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
-                {consultations.length} Consultations
+                {consultations.length} {t('health_card.consultations', 'Consultations')}
               </span>
             </div>
 
@@ -550,9 +552,9 @@ export const HealthCardPage: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-xs w-full p-6 text-center shadow-xl border border-slate-100 space-y-4">
             <div>
-              <h3 className="font-bold text-base text-slate-900">ABHA Verification QR</h3>
+              <h3 className="font-bold text-base text-slate-900">{t('health_card.qr_verification', 'ABHA Verification QR')}</h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Scan using ABDM Scanner or PHR application
+                {t('health_card.qr_scan_desc', 'Scan using ABDM Scanner or PHR application')}
               </p>
             </div>
 
@@ -573,7 +575,7 @@ export const HealthCardPage: React.FC = () => {
               onClick={() => setShowQrModal(false)}
               className="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2 rounded-lg text-xs transition"
             >
-              Close
+              {t('health_card.close', 'Close')}
             </button>
           </div>
         </div>

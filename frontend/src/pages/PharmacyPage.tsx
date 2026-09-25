@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../lib/auth';
 import { api } from '../lib/api';
@@ -1268,9 +1269,9 @@ export const PharmacyPage: React.FC = () => {
     return <CitizenPharmacyView />;
   }
 
-  // 2. Doctor Clinical Formulary & Price Comparison View
+  // 2. Doctor Role: Pharmacy is integrated directly into Doctor Dashboard prescription pad
   if (isDoctorRole) {
-    return <DoctorJanAushadhiFormularyView />;
+    return <Navigate to="/doctor" replace />;
   }
 
   // 3. Hospital Admin / Pharmacist Central Warehouse & Dispensing Desk

@@ -51,40 +51,58 @@ async def get_public_health_overview(db: AsyncSession) -> PublicHealthOverview:
         OutbreakAlert(
             id="OB-2026-001",
             disease_name="Dengue Fever / Vector-Borne Spike",
+            disease="Dengue Fever",
             icd10_code="A90",
             district="Jaipur",
             block="Bassi Sub-District",
+            cluster_location="Bassi Block, Jaipur",
             reported_cases_this_week=48,
+            cases_last_7d=48,
             baseline_threshold=15,
+            baseline_mean=15,
             spike_percentage=220.0,
-            alert_level="EPIDEMIC_SPIKE",
+            anomaly_sigma=2.8,
+            alert_level="RED_OUTBREAK",
             recommended_action="Deploy ASHA fogging squad, issue community larvicide advisory, and stock IV fluids at CHC Bassi.",
+            rapid_action_advised="Deploy ASHA fogging squad, issue community larvicide advisory, and stock IV fluids at CHC Bassi.",
             detected_at=now - timedelta(hours=4),
         ),
         OutbreakAlert(
             id="OB-2026-002",
             disease_name="Acute Waterborne Gastroenteritis",
+            disease="Acute Gastroenteritis",
             icd10_code="A09",
             district="Jaipur",
             block="Jamwa Ramgarh",
+            cluster_location="Jamwa Ramgarh, Jaipur",
             reported_cases_this_week=29,
+            cases_last_7d=29,
             baseline_threshold=12,
+            baseline_mean=12,
             spike_percentage=141.6,
-            alert_level="WARNING",
+            anomaly_sigma=2.1,
+            alert_level="AMBER_WATCH",
             recommended_action="Chlorinate public village water wells and distribute ORS + Zinc packets via ANM frontline outposts.",
+            rapid_action_advised="Chlorinate public village water wells and distribute ORS + Zinc packets via ANM frontline outposts.",
             detected_at=now - timedelta(hours=18),
         ),
         OutbreakAlert(
             id="OB-2026-003",
             disease_name="Seasonal Acute Bronchitis / Influenza",
+            disease="Acute Respiratory Infection",
             icd10_code="J20.9",
             district="Jaipur",
             block="Amber",
+            cluster_location="Amber Block, Jaipur",
             reported_cases_this_week=34,
+            cases_last_7d=34,
             baseline_threshold=25,
+            baseline_mean=25,
             spike_percentage=36.0,
-            alert_level="WATCH",
+            anomaly_sigma=1.6,
+            alert_level="NORMAL",
             recommended_action="Pre-position pediatric cough syrups and Azithromycin generic stock in primary health centres.",
+            rapid_action_advised="Pre-position pediatric cough syrups and Azithromycin generic stock in primary health centres.",
             detected_at=now - timedelta(days=1),
         ),
     ]
@@ -100,6 +118,12 @@ async def get_public_health_overview(db: AsyncSession) -> PublicHealthOverview:
             active_cases=142,
             outbreak_risk="MODERATE",
             primary_condition="Multi-Specialty & ICU Referrals",
+            block="Jaipur Central",
+            lat=26.9124,
+            lng=75.7873,
+            dominant_condition="Multi-Specialty & ICU Referrals",
+            alert_level="AMBER_WATCH",
+            facility_hub="District Hospital Jaipur (Hub)",
         ),
         GeoClusterItem(
             id="geo-chc-01",
@@ -110,6 +134,12 @@ async def get_public_health_overview(db: AsyncSession) -> PublicHealthOverview:
             active_cases=58,
             outbreak_risk="HIGH",
             primary_condition="Dengue & Febrile Illness",
+            block="Bassi Block",
+            lat=26.8322,
+            lng=76.0421,
+            dominant_condition="Dengue & Febrile Illness",
+            alert_level="RED_OUTBREAK",
+            facility_hub="CHC Bassi (FRU)",
         ),
         GeoClusterItem(
             id="geo-phc-01",
@@ -120,6 +150,12 @@ async def get_public_health_overview(db: AsyncSession) -> PublicHealthOverview:
             active_cases=31,
             outbreak_risk="MODERATE",
             primary_condition="Gastroenteritis & Maternal ANC",
+            block="Jamwa Ramgarh",
+            lat=27.0341,
+            lng=75.9812,
+            dominant_condition="Gastroenteritis & Maternal ANC",
+            alert_level="AMBER_WATCH",
+            facility_hub="PHC Jamwa Ramgarh",
         ),
         GeoClusterItem(
             id="geo-hwc-01",
@@ -130,18 +166,27 @@ async def get_public_health_overview(db: AsyncSession) -> PublicHealthOverview:
             active_cases=19,
             outbreak_risk="LOW",
             primary_condition="NCD Hypertension & Diabetes",
+            block="Kotputli / Sub-Centre",
+            lat=26.8841,
+            lng=76.1154,
+            dominant_condition="NCD Hypertension & Diabetes",
+            alert_level="NORMAL",
+            facility_hub="Ayushman Arogya Mandir",
         ),
     ]
 
     return PublicHealthOverview(
-        total_consultations=max(total_consultations, 84),
-        active_referrals=max(active_referrals, 6),
-        high_risk_maternal_cases=max(high_risk_maternal, 4),
-        ncd_screenings_count=max(ncd_screenings, 38),
-        overall_bed_occupancy_rate=bed_rate or 68.5,
+        total_consultations=max(total_consultations, 1420),
+        active_referrals=max(active_referrals, 18),
+        high_risk_maternal_cases=max(high_risk_maternal, 7),
+        ncd_screenings_count=max(ncd_screenings, 342),
+        ncd_screened_count=max(ncd_screenings, 342),
+        overall_bed_occupancy_rate=bed_rate or 78.5,
+        bed_occupancy_rate=bed_rate or 78.5,
         jan_aushadhi_dispensing_compliance=94.2,
         active_outbreak_alerts=len(outbreaks),
         outbreaks=outbreaks,
+        outbreak_alerts=outbreaks,
         geo_clusters=geo_clusters,
     )
 
@@ -153,27 +198,52 @@ async def get_disease_trends(db: AsyncSession, days: int = 14) -> list[DiseaseTr
 
     # Mock historical trajectory for trend charting
     base_data = [
-        {"day_offset": 13, "vector": 12, "resp": 18, "ncd": 24, "maternal": 8},
-        {"day_offset": 12, "vector": 14, "resp": 20, "ncd": 22, "maternal": 9},
-        {"day_offset": 11, "vector": 18, "resp": 19, "ncd": 26, "maternal": 7},
-        {"day_offset": 10, "vector": 22, "resp": 24, "ncd": 25, "maternal": 11},
-        {"day_offset": 9, "vector": 25, "resp": 22, "ncd": 28, "maternal": 10},
-        {"day_offset": 8, "vector": 31, "resp": 26, "ncd": 30, "maternal": 12},
-        {"day_offset": 7, "vector": 36, "resp": 29, "ncd": 29, "maternal": 10},
-        {"day_offset": 6, "vector": 42, "resp": 28, "ncd": 32, "maternal": 13},
-        {"day_offset": 5, "vector": 44, "resp": 31, "ncd": 35, "maternal": 11},
-        {"day_offset": 4, "vector": 46, "resp": 33, "ncd": 34, "maternal": 14},
-        {"day_offset": 3, "vector": 49, "resp": 32, "ncd": 36, "maternal": 12},
-        {"day_offset": 2, "vector": 52, "resp": 35, "ncd": 38, "maternal": 15},
-        {"day_offset": 1, "vector": 48, "resp": 34, "ncd": 37, "maternal": 14},
-        {"day_offset": 0, "vector": 50, "resp": 36, "ncd": 39, "maternal": 16},
+        {"day_offset": 6, "dengue": 14, "gastro": 8, "ncd": 22, "dm": 19, "resp": 12},
+        {"day_offset": 5, "dengue": 18, "gastro": 11, "ncd": 25, "dm": 21, "resp": 14},
+        {"day_offset": 4, "dengue": 24, "gastro": 15, "ncd": 28, "dm": 23, "resp": 18},
+        {"day_offset": 3, "dengue": 31, "gastro": 18, "ncd": 30, "dm": 26, "resp": 22},
+        {"day_offset": 2, "dengue": 38, "gastro": 22, "ncd": 34, "dm": 28, "resp": 25},
+        {"day_offset": 1, "dengue": 42, "gastro": 26, "ncd": 36, "dm": 30, "resp": 28},
+        {"day_offset": 0, "dengue": 48, "gastro": 29, "ncd": 39, "dm": 32, "resp": 34},
     ]
 
     for item in base_data:
-        dt = (now - timedelta(days=item["day_offset"])).strftime("%d %b")
-        points.append(DiseaseTrendPoint(date=dt, cases=item["vector"], category="Vector-Borne (Dengue/Malaria)"))
-        points.append(DiseaseTrendPoint(date=dt, cases=item["resp"], category="Respiratory Infections"))
-        points.append(DiseaseTrendPoint(date=dt, cases=item["ncd"], category="NCD (Hypertension/Diabetes)"))
-        points.append(DiseaseTrendPoint(date=dt, cases=item["maternal"], category="Maternal ANC Cohort"))
+        dt = (now - timedelta(days=item["day_offset"])).strftime("%Y-%m-%d")
+        points.append(
+            DiseaseTrendPoint(
+                date=dt,
+                cases=item["dengue"],
+                category="Vector-Borne (Dengue/Malaria)",
+                dengue=item["dengue"],
+                gastroenteritis=item["gastro"],
+                hypertension=item["ncd"],
+                diabetes=item["dm"],
+                ari_pneumonia=item["resp"],
+            )
+        )
+        points.append(
+            DiseaseTrendPoint(
+                date=dt,
+                cases=item["gastro"],
+                category="Gastroenteritis (Waterborne)",
+                dengue=item["dengue"],
+                gastroenteritis=item["gastro"],
+                hypertension=item["ncd"],
+                diabetes=item["dm"],
+                ari_pneumonia=item["resp"],
+            )
+        )
+        points.append(
+            DiseaseTrendPoint(
+                date=dt,
+                cases=item["ncd"],
+                category="NCD Hypertension",
+                dengue=item["dengue"],
+                gastroenteritis=item["gastro"],
+                hypertension=item["ncd"],
+                diabetes=item["dm"],
+                ari_pneumonia=item["resp"],
+            )
+        )
 
     return points

@@ -42,7 +42,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ defaultMode = 'login' }) =
 
   // Role selector for form
   const [selectedRole, setSelectedRole] = useState<'PATIENT' | 'DOCTOR' | 'STAFF'>('PATIENT');
-  const [staffSubType, setStaffSubType] = useState<'ASHA' | 'CHO' | 'ADMIN'>('ASHA');
+  const [staffSubType, setStaffSubType] = useState<'ASHA' | 'ADMIN'>('ASHA');
 
   // Form states
   const [emailOrUsername, setEmailOrUsername] = useState('patient.ramesh');
@@ -72,9 +72,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ defaultMode = 'login' }) =
         if (staffSubType === 'ASHA') {
           setEmailOrUsername('asha.rekha');
           setPassword('asha123');
-        } else if (staffSubType === 'CHO') {
-          setEmailOrUsername('cho.meena');
-          setPassword('cho123');
         } else {
           setEmailOrUsername('admin');
           setPassword('admin123');
@@ -133,7 +130,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ defaultMode = 'login' }) =
     }
   };
 
-  const handleQuickDemo = async (u: string, p: string, roleTab: 'PATIENT' | 'DOCTOR' | 'STAFF', sub?: 'ASHA' | 'CHO' | 'ADMIN') => {
+  const handleQuickDemo = async (u: string, p: string, roleTab: 'PATIENT' | 'DOCTOR' | 'STAFF', sub?: 'ASHA' | 'ADMIN') => {
     setSelectedRole(roleTab);
     if (sub) setStaffSubType(sub);
     setEmailOrUsername(u);
@@ -157,8 +154,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ defaultMode = 'login' }) =
     { label: 'Ramesh Yadav (Patient)', user: 'patient.ramesh', pass: 'patient123', role: 'PATIENT' as const, tag: 'ABHA Citizen' },
     { label: 'Dr. Priya Sharma', user: 'dr.sharma', pass: 'doctor123', role: 'DOCTOR' as const, tag: 'District Hospital' },
     { label: 'Rekha Bai (ASHA)', user: 'asha.rekha', pass: 'asha123', role: 'STAFF' as const, sub: 'ASHA' as const, tag: 'Village Health' },
-    { label: 'CHO Meena Kumari', user: 'cho.meena', pass: 'cho123', role: 'STAFF' as const, sub: 'CHO' as const, tag: 'Sub-Centre' },
-    { label: 'Dr. Rajesh Kumar (Admin)', user: 'admin', pass: 'admin123', role: 'STAFF' as const, sub: 'ADMIN' as const, tag: 'CMO / Superadmin' },
+    { label: 'Dr. Rajesh Kumar (Hospital Admin)', user: 'admin', pass: 'admin123', role: 'STAFF' as const, sub: 'ADMIN' as const, tag: 'Hospital Admin' },
   ];
 
   return (
@@ -448,18 +444,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({ defaultMode = 'login' }) =
             {/* If Staff is selected, show sub-role selector */}
             {selectedRole === 'STAFF' && (
               <div className="flex items-center justify-center gap-2 mb-4">
-                {(['ASHA', 'CHO', 'ADMIN'] as const).map((role) => (
+                {(['ASHA', 'ADMIN'] as const).map((role) => (
                   <button
                     key={role}
                     type="button"
                     onClick={() => setStaffSubType(role)}
-                    className={`px-3 py-1 rounded-lg text-[11px] font-bold border transition-colors ${
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
                       staffSubType === role
-                        ? 'bg-sky-50 border-sky-300 text-sky-700'
+                        ? 'bg-sky-50 border-sky-300 text-sky-700 shadow-sm'
                         : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
                     }`}
                   >
-                    {role === 'ASHA' ? 'ASHA Worker' : role === 'CHO' ? 'CHO (Sub-Centre)' : 'Superadmin'}
+                    {role === 'ASHA' ? 'ASHA Worker' : 'Hospital Admin'}
                   </button>
                 ))}
               </div>
